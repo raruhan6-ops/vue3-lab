@@ -1,0 +1,35 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <!-- Animated gradient -->
+    <linearGradient id="rarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#42b883">
+        <animate attributeName="stop-color" values="#42b883;#2ecc71;#3498db;#42b883" dur="6s" repeatCount="indefinite"/>
+      </stop>
+      <stop offset="100%" stop-color="#2ecc71">
+        <animate attributeName="stop-color" values="#2ecc71;#3498db;#42b883;#2ecc71" dur="6s" repeatCount="indefinite"/>
+      </stop>
+    </linearGradient>
+
+    <!-- Glow filter -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="90" fill="url(#rarGradient)" filter="url(#glow)" opacity="0.9">
+    <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="10s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Main RAR text -->
+  <text x="50%" y="58%" text-anchor="middle" font-size="64" font-family="Poppins, sans-serif"
+        fill="white" font-weight="700" filter="url(#glow)">RAR</text>
+
+  <!-- Subtext -->
+  <text x="50%" y="80%" text-anchor="middle" font-size="18" font-family="Poppins, sans-serif"
+        fill="rgba(255,255,255,0.8)">Lab System</text>
+</svg>

@@ -1,0 +1,23 @@
+:root {
+  --bg: #f7faf9;
+  --panel: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --primary: #42b883;
+  --primary-600: #2f976f;
+  --primary-700: #2a8a65;
+  --ring: 0 0 0 3px rgba(66,184,131,.25);
+  --radius: 14px;
+  --shadow: 0 10px 30px rgba(0,0,0,.08);
+}
+
+:root.dark {
+  --bg: #0f172a;
+  --panel: #111827;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --primary: #34d399;
+  --primary-600: #10b981;
+  --primary-700: #059669;
+  --shadow: 0 12px 30px rgba(0,0,0,.45);
+}

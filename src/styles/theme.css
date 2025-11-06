@@ -1,0 +1,20 @@
+:root {
+  --color-primary: #16a34a; /* bright green */
+  --color-secondary: #3b82f6; /* blue */
+  --color-accent: #f59e0b; /* amber */
+  --color-danger: #ef4444;
+  --color-surface: #ffffff;
+  --color-bg: #f0fdf4;
+  --color-text: #1f2937;
+  --radius: 16px;
+  --shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+
+/* optional dark mode */
+:root.dark {
+  --color-primary: #34d399;
+  --color-secondary: #60a5fa;
+  --color-bg: #1e293b;
+  --color-surface: #0f172a;
+  --color-text: #e5e7eb;
+}

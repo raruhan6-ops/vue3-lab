@@ -62,12 +62,12 @@ export const routes = [
     },
   },
   {
-    path: '/lab5',
-    name: 'Lab5',
-    component: () => import('../views/Lab5.vue'),
-    meta: {
-      title: 'Lab 5 - 图数据可视化',
-      bg: 'linear-gradient(135deg,#4158d0 0%,#c850c0 46%,#ffcc70 100%)', // purple → gold
+     path: '/lab5',
+  name: 'Lab5',
+  component: () => import('../views/Lab5.vue'),
+  meta: {
+    title: 'Lab 5 - 学生关系可视化',
+    bg: 'linear-gradient(135deg,#89f7fe 0%,#66a6ff 100%)', // purple → gold
     },
   },
   {

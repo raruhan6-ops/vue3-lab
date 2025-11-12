@@ -1,11 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// ✅ Import main views and components
+// ✅ Import main views
 import HomeView from '../views/HomeView.vue'
 import Lab1View from '../views/Lab1.vue'
 import Lab2View from '../views/Lab2.vue'
 import Lab3View from '../views/Lab3.vue'
 import Lab4View from '../views/Lab4.vue'
+import Lab5View from '../views/Lab5.vue' // 🆕 Added Lab 5
+
+// ✅ Optional supporting components
 import HelloVue from '../components/HelloVue.vue'
 import ApiDemo from '../components/ApiDemo.vue'
 import ChartsDemo from '../components/ChartsDemo.vue'
@@ -19,7 +22,7 @@ export const routes = [
     component: HomeView,
     meta: {
       title: 'Home',
-      bg: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)' // purple -> indigo
+      bg: 'linear-gradient(135deg,#667eea 0%,#764ba2 100%)', // purple → indigo
     },
   },
   {
@@ -28,7 +31,7 @@ export const routes = [
     component: Lab1View,
     meta: {
       title: 'Lab 1 - Vue 基础交互',
-      bg: 'linear-gradient(135deg,#ff9a9e 0%,#fecfef 100%)' // warm pink
+      bg: 'linear-gradient(135deg,#ff9a9e 0%,#fecfef 100%)', // pink
     },
   },
   {
@@ -36,8 +39,8 @@ export const routes = [
     name: 'Lab2',
     component: () => import('../views/Lab2.vue'),
     meta: {
-      title: 'Lab 2 - Charts',
-      bg: 'linear-gradient(135deg,#89f7fe 0%,#66a6ff 100%)' // cyan -> blue
+      title: 'Lab 2 - 数据交互与 API',
+      bg: 'linear-gradient(135deg,#89f7fe 0%,#66a6ff 100%)', // cyan → blue
     },
   },
   {
@@ -45,8 +48,8 @@ export const routes = [
     name: 'Lab3',
     component: () => import('../views/Lab3.vue'),
     meta: {
-      title: 'Lab 3',
-      bg: 'linear-gradient(135deg,#a8e063 0%,#56ab2f 100%)' // green
+      title: 'Lab 3 - 数据可视化 (Charts)',
+      bg: 'linear-gradient(135deg,#a8e063 0%,#56ab2f 100%)', // green
     },
   },
   {
@@ -54,8 +57,17 @@ export const routes = [
     name: 'Lab4',
     component: () => import('../views/Lab4.vue'),
     meta: {
-      title: 'Lab 4',
-      bg: 'linear-gradient(135deg,#f6d365 0%,#fda085 100%)' // warm orange
+      title: 'Lab 4 - G2 高级图表',
+      bg: 'linear-gradient(135deg,#f6d365 0%,#fda085 100%)', // warm orange
+    },
+  },
+  {
+    path: '/lab5',
+    name: 'Lab5',
+    component: () => import('../views/Lab5.vue'),
+    meta: {
+      title: 'Lab 5 - 图数据可视化',
+      bg: 'linear-gradient(135deg,#4158d0 0%,#c850c0 46%,#ffcc70 100%)', // purple → gold
     },
   },
   {
@@ -70,7 +82,7 @@ const router = createRouter({
   routes,
 })
 
-// ✅ Optional: Update browser tab title dynamically
+// ✅ Automatically set page title on navigation
 router.afterEach((to) => {
   document.title = to.meta.title || 'Vue3 实验平台'
 })

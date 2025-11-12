@@ -14,7 +14,12 @@
       </div>
 
       <nav class="nav">
-        <RouterLink v-for="tab in tabs" :key="tab.path" :to="tab.path" active-class="active">
+        <RouterLink
+          v-for="tab in tabs"
+          :key="tab.path"
+          :to="tab.path"
+          active-class="active"
+        >
           {{ tab.label }}
         </RouterLink>
 
@@ -48,13 +53,14 @@ const tabs = [
   { path: "/lab1", label: "Lab 1" },
   { path: "/lab2", label: "Lab 2" },
   { path: "/lab3", label: "Lab 3" },
-  { path: "/lab4", label: "Lab 4" }
+  { path: "/lab4", label: "Lab 4" },
+  { path: "/lab5", label: "Lab 5" } // ✅ Added Lab 5
 ]
 
 // 🌗 Dark Mode State
 const isDark = ref(false)
 
-// ✅ Load saved theme
+// ✅ Load saved theme from localStorage
 onMounted(() => {
   const saved = localStorage.getItem("theme")
   if (saved === "dark") {
@@ -246,7 +252,8 @@ function toggleTheme() {
 }
 
 /* 🌬 Page Transition */
-.fade-slide-enter-active, .fade-slide-leave-active {
+.fade-slide-enter-active,
+.fade-slide-leave-active {
   transition: all 0.6s ease;
 }
 .fade-slide-enter-from {

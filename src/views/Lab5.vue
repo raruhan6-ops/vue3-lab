@@ -9,6 +9,13 @@
       </div>
     </header>
 
+    <!-- 📊 Stats Bar -->
+    <div class="stats" v-if="stats.totalNodes > 0">
+      <p>👥 学生节点数: <strong>{{ stats.totalNodes }}</strong></p>
+      <p>🔗 关系数: <strong>{{ stats.totalEdges }}</strong></p>
+    </div>
+
+    <!-- 🧠 Visualization -->
     <div ref="graphEl" class="graph"></div>
 
     <p v-if="error" class="error">{{ error }}</p>
@@ -18,42 +25,45 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
-import * as G6 from '@antv/g6'
+import { Graph } from '@antv/g6'
 
-
+// 🔧 Refs and state
 const graphEl = ref(null)
 let graph = null
 const loading = ref(false)
 const error = ref('')
-
-// track dark/light theme
+const stats = ref({ totalNodes: 0, totalEdges: 0 })
 const isDark = ref(document.documentElement.classList.contains('dark'))
 
+// 🎨 Colors
 function nodeColor(status) {
   return status === 'Active' ? '#42b883' : '#f87171'
 }
-
 function edgeColor() {
   return isDark.value ? '#475569' : '#cbd5e1'
 }
 
+// 📊 Build Graph Data
 function buildGraphData(students) {
   const nodes = students.map(s => ({
     id: String(s.id),
-    label: `${s.name}\n${s.course}\n${s.semester}`,
+    name: s.name,
+    course: s.course,
+    semester: s.semester,
+    status: s.status,
     style: {
       fill: nodeColor(s.status),
-      stroke: '#ffffff',
+      stroke: '#fff',
       lineWidth: 1.5,
     },
-    labelCfg: {
+    label: {
+      text: `${s.name}\n${s.course}`,
       style: {
-        fill: '#ffffff',
+        fill: '#fff',
         fontSize: 11,
         fontWeight: 600,
         textAlign: 'center',
       },
-      position: 'center',
     },
     size: Math.max(30, Math.min(56, 24 + (s.score ?? 70) / 3)),
   }))
@@ -66,28 +76,30 @@ function buildGraphData(students) {
         edges.push({
           source: String(a.id),
           target: String(b.id),
-          style: { stroke: edgeColor(), lineWidth: 2, opacity: 0.85 },
+          relation: `${a.semester}`,
+          style: { stroke: '#60a5fa', lineWidth: 2 },
         })
       } else if (a.course === b.course) {
         edges.push({
           source: String(a.id),
           target: String(b.id),
-          style: { stroke: edgeColor(), lineWidth: 1, opacity: 0.35 },
+          relation: `${a.course}`,
+          style: { stroke: '#a3e635', lineWidth: 1.2 },
         })
       }
     }
   }
-
   return { nodes, edges }
 }
 
+// 🔁 Reload student data
 async function reload() {
   loading.value = true
   error.value = ''
   try {
     const res = await axios.get('/api/students')
     const students = Array.isArray(res.data) ? res.data : []
-    renderGraph(students)
+    await renderGraph(students)
   } catch (e) {
     error.value = '数据加载失败：' + (e?.message || e)
   } finally {
@@ -95,9 +107,9 @@ async function reload() {
   }
 }
 
+// 🎨 Render Graph
 async function renderGraph(students) {
-  const data = buildGraphData(students)
-
+  const { nodes, edges } = buildGraphData(students)
   if (graph) {
     try { graph.destroy() } catch {}
     graph = null
@@ -107,8 +119,6 @@ async function renderGraph(students) {
   if (!container) return
 
   try {
-    const { Graph } = await import('@antv/g6')
-
     graph = new Graph({
       container,
       width: container.clientWidth || 800,
@@ -124,37 +134,22 @@ async function renderGraph(students) {
       node: {
         type: 'circle',
         style: {
-          stroke: '#fff',
-          lineWidth: 2,
-          shadowColor: 'rgba(0,0,0,0.1)',
-          shadowBlur: 10,
           cursor: 'pointer',
-        },
-        // ✅ show student name + course inside node
-        label: {
-          fields: ['name', 'course'],
-          formatter: (d) => `${d.name}\n${d.course}`,
-          style: {
-            fill: '#fff',
-            fontSize: 10,
-            fontWeight: 600,
-            textAlign: 'center',
-          },
+          shadowColor: 'rgba(0,0,0,0.1)',
+          shadowBlur: 8,
         },
       },
       edge: {
         type: 'line',
         style: {
-          stroke: isDark.value ? '#64748b' : '#cbd5e1',
+          stroke: edgeColor(),
           lineWidth: 1.5,
           opacity: 0.8,
         },
-        // ✅ Show relationship type on edge hover
         label: {
-          fields: ['relation'],
-          formatter: (d) => d.relation || '',
+          text: (d) => d.relation || '',
           style: {
-            fill: '#666',
+            fill: isDark.value ? '#ccc' : '#333',
             fontSize: 9,
             background: '#fff',
           },
@@ -163,46 +158,16 @@ async function renderGraph(students) {
       background: isDark.value ? '#0b1220' : '#ffffff',
     })
 
-    // ✅ Modify data to include readable node info
-    const formattedData = {
-      nodes: students.map(s => ({
-        id: String(s.id),
-        name: s.name,
-        course: s.course,
-        semester: s.semester,
-        status: s.status,
-        style: { fill: s.status === 'Active' ? '#42b883' : '#f87171' },
-      })),
-      edges: (() => {
-        const list = []
-        for (let i = 0; i < students.length; i++) {
-          for (let j = i + 1; j < students.length; j++) {
-            const a = students[i], b = students[j]
-            if (a.semester === b.semester) {
-              list.push({
-                source: String(a.id),
-                target: String(b.id),
-                relation: `${a.semester}`,
-                style: { stroke: '#60a5fa', lineWidth: 2 },
-              })
-            } else if (a.course === b.course) {
-              list.push({
-                source: String(a.id),
-                target: String(b.id),
-                relation: `${a.course}`,
-                style: { stroke: '#a3e635', lineWidth: 1.2 },
-              })
-            }
-          }
-        }
-        return list
-      })()
-    }
-
     // ✅ Feed data and render
-    await graph.setData(formattedData)
+    await graph.setData({ nodes, edges })
     await graph.render()
     await graph.fitView()
+
+    // ✅ Update Stats
+    stats.value = {
+      totalNodes: nodes.length,
+      totalEdges: edges.length,
+    }
 
     // ✅ Hover highlight
     graph.on('node:mouseenter', (evt) => {
@@ -210,16 +175,17 @@ async function renderGraph(students) {
     })
     graph.on('node:mouseleave', (evt) => {
       const s = students.find(stu => String(stu.id) === evt.item.id)
-      graph.updateNodeData([{ id: evt.item.id, style: { fill: s.status === 'Active' ? '#42b883' : '#f87171' } }])
+      graph.updateNodeData([{ id: evt.item.id, style: { fill: nodeColor(s.status) } }])
     })
 
-    console.log('📊 图数据可视化 数据:', formattedData)
+    console.log('📊 图数据可视化 数据:', { nodes, edges })
   } catch (err) {
     console.error('G6 渲染失败:', err)
     error.value = '数据加载失败：' + err.message
   }
 }
 
+// 🌗 Theme observer
 const themeObserver = new MutationObserver(() => {
   const nowDark = document.documentElement.classList.contains('dark')
   if (nowDark !== isDark.value) {
@@ -231,25 +197,15 @@ const themeObserver = new MutationObserver(() => {
 onMounted(() => {
   themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
   reload()
+
   const onResize = () => {
     if (!graph || !graphEl.value) return
     const w = graphEl.value.clientWidth
     const h = Math.max(420, graphEl.value.clientHeight || 420)
-
     if (typeof graph.changeSize === 'function') {
       graph.changeSize(w, h)
     } else if (typeof graph.setSize === 'function') {
       graph.setSize(w, h)
-    } else if (graph.get && typeof graph.get === 'function') {
-      // try canvas resize (best-effort)
-      const canvas = graph.get('canvas')
-      if (canvas && typeof canvas.set === 'function') {
-        try { canvas.set('width', w); canvas.set('height', h) } catch {}
-      } else if (typeof graph.render === 'function') {
-        graph.render()
-      }
-    } else if (typeof graph.render === 'function') {
-      graph.render()
     }
   }
   window.addEventListener('resize', onResize)
@@ -294,6 +250,28 @@ onBeforeUnmount(() => {
   box-shadow: 0 6px 14px rgba(66, 184, 131, .25);
 }
 .controls button:hover { transform: translateY(-2px); }
+
+/* 📊 Stats Bar */
+.stats {
+  display: flex;
+  justify-content: flex-start;
+  gap: 2rem;
+  margin: 0.8rem 0 1rem;
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+  background: var(--color-surface, #fff);
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+}
+.stats p {
+  margin: 0;
+}
+.dark .stats {
+  background: #1e293b;
+  color: #f1f5f9;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05);
+}
 
 .graph {
   width: 100%;

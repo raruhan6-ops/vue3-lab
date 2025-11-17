@@ -34,6 +34,8 @@
     <transition name="fade-slide" mode="out-in">
       <main class="main-content">
         <RouterView />
+        <!-- Add Chatbot Component Here -->
+        <Chatbot />
       </main>
     </transition>
 
@@ -47,6 +49,7 @@
 <script setup>
 import { RouterView, RouterLink } from "vue-router"
 import { ref, onMounted } from "vue"
+import Chatbot from './components/Chatbot.vue' // Importing the Chatbot Component
 
 // 🧭 Navigation Tabs
 const tabs = [

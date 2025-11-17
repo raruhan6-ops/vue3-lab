@@ -3,15 +3,16 @@ import express from "express";
 import cors from "cors";
 import axios from "axios";
 import dotenv from "dotenv";
+import path from "path";
 
-// prefer explicit path, default to ./server/.env (loaded from project root),
+// prefer explicit path, default to server/.env next to this file,
 // fall back to legacy groq.env if needed
-const envPath = process.env.GROQ_ENV_PATH || "./server/.env";
+const envPath = process.env.GROQ_ENV_PATH || path.resolve(__dirname, ".env");
 dotenv.config({ path: envPath });
 
-// if essential vars still missing, try legacy groq.env (best-effort, no overwrite if already set)
+// if essential vars still missing, try legacy groq.env (best-effort)
 if (!process.env.GROQ_API_KEY || !process.env.GROQ_API_URL) {
-  dotenv.config({ path: "./groq.env" });
+  dotenv.config({ path: path.resolve(__dirname, "groq.env") });
 }
 
 const app = express();

@@ -62,12 +62,22 @@ export const routes = [
     },
   },
   {
-     path: '/lab5',
-  name: 'Lab5',
-  component: () => import('../views/Lab5.vue'),
-  meta: {
-    title: 'Lab 5 - 学生关系可视化',
-    bg: 'linear-gradient(135deg,#89f7fe 0%,#66a6ff 100%)', // purple → gold
+    path: '/lab5',
+    name: 'Lab5',
+    component: () => import('../views/Lab5.vue'),
+    meta: {
+      title: 'Lab 5 - 学生关系可视化',
+      bg: 'linear-gradient(135deg,#89f7fe 0%,#66a6ff 100%)', // purple → gold
+    },
+  },
+  // 🆕 Lab 6 route
+  {
+    path: '/lab6',
+    name: 'Lab6',
+    component: () => import('../views/Lab6.vue'),
+    meta: {
+      title: 'Lab 6 - G6 交互可视化',
+      bg: 'linear-gradient(135deg,#fbc2eb 0%,#a6c1ee 100%)', // soft pink → blue
     },
   },
   {

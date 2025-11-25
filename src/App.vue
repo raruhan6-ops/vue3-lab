@@ -57,7 +57,8 @@ const tabs = [
   { path: "/lab2", label: "Lab 2" },
   { path: "/lab3", label: "Lab 3" },
   { path: "/lab4", label: "Lab 4" },
-  { path: "/lab5", label: "Lab 5" } // ✅ Added Lab 5
+  { path: "/lab5", label: "Lab 5" }, // ✅ Added Lab 5
+  { path: "/lab6", label: "Lab 6" }, // 🆕 Lab 6
 ]
 
 // 🌗 Dark Mode State

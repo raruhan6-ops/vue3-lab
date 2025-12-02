@@ -1,17 +1,23 @@
 <template>
   <section class="lab-page">
     <!-- Page Header -->
-    <header class="page-header">
-      <div class="header-content">
-        <span class="lab-badge">Lab 05</span>
-        <h1>学生关系网络</h1>
-        <p>使用 G6 图可视化库构建学生关系网络，探索同学期和同课程的关联</p>
-      </div>
-      <button class="btn-refresh" @click="reload" :disabled="loading">
-        <span class="btn-icon">{{ loading ? '⏳' : '🔄' }}</span>
-        {{ loading ? '加载中...' : '刷新数据' }}
-      </button>
-    </header>
+    <LabHeader
+      lab-number="05"
+      title="学生关系网络"
+      description="使用 G6 图可视化库构建学生关系网络，探索同学期和同课程的关联"
+    >
+      <template #action>
+        <div class="header-actions">
+          <button class="btn-export" @click="exportGraph" title="导出图片">
+            <span>📥</span> 导出
+          </button>
+          <button class="btn-refresh" @click="reload" :disabled="loading">
+            <span class="btn-icon">{{ loading ? '⏳' : '🔄' }}</span>
+            {{ loading ? '加载中...' : '刷新数据' }}
+          </button>
+        </div>
+      </template>
+    </LabHeader>
 
     <!-- Toolbar -->
     <div class="toolbar">
@@ -58,6 +64,18 @@
           <span class="stat-value">{{ stats.totalEdges }}</span>
           <span class="stat-label">关系</span>
         </div>
+      </div>
+
+      <!-- Search -->
+      <div class="search-group">
+        <input
+          v-model="searchQuery"
+          @keyup.enter="searchStudent"
+          placeholder="搜索学生..."
+          class="search-input"
+        />
+        <button @click="searchStudent" class="search-btn" title="搜索">🔍</button>
+        <button v-if="highlightedId" @click="clearSearch" class="clear-btn" title="清除">✕</button>
       </div>
     </div>
 
@@ -114,6 +132,7 @@
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { Graph } from '@antv/g6'
+import LabHeader from '../components/ui/LabHeader.vue'
 
 const graphEl = ref(null)
 let graph = null
@@ -122,6 +141,11 @@ const adding = ref(false)
 const error = ref('')
 const stats = ref({ totalNodes: 0, totalEdges: 0 })
 const isDark = ref(document.documentElement.classList.contains('dark'))
+
+// Search functionality
+const searchQuery = ref('')
+const highlightedId = ref(null)
+const allStudents = ref([])
 
 // Filters
 const showSemester = ref(true)
@@ -210,11 +234,93 @@ async function reload() {
   try {
     const res = await axios.get('/api/students')
     const students = Array.isArray(res.data) ? res.data : []
+    allStudents.value = students
     await renderGraph(students)
   } catch (e) {
     error.value = '数据加载失败：' + (e?.message || e)
   } finally {
     loading.value = false
+  }
+}
+
+// Search student by name
+function searchStudent() {
+  if (!searchQuery.value.trim()) return
+  const query = searchQuery.value.toLowerCase()
+  const found = allStudents.value.find(s => 
+    s.name.toLowerCase().includes(query)
+  )
+  if (found) {
+    highlightedId.value = String(found.id)
+    highlightNode(String(found.id))
+    error.value = ''
+  } else {
+    error.value = `未找到匹配 "${searchQuery.value}" 的学生`
+  }
+}
+
+// Clear search highlight
+function clearSearch() {
+  highlightedId.value = null
+  searchQuery.value = ''
+  if (graph) {
+    graph.setData(buildGraphData(allStudents.value))
+    graph.render()
+  }
+}
+
+// Highlight a specific node
+function highlightNode(nodeId) {
+  if (!graph) return
+  const { nodes, edges } = buildGraphData(allStudents.value)
+  
+  // Find connected nodes
+  const connectedIds = new Set([nodeId])
+  edges.forEach(e => {
+    if (e.source === nodeId) connectedIds.add(e.target)
+    if (e.target === nodeId) connectedIds.add(e.source)
+  })
+
+  // Update node styles
+  nodes.forEach(node => {
+    const isHighlighted = connectedIds.has(node.id)
+    node.style = {
+      opacity: isHighlighted ? 1 : 0.2,
+      lineWidth: node.id === nodeId ? 4 : 2,
+    }
+  })
+
+  edges.forEach(edge => {
+    const isConnected = edge.source === nodeId || edge.target === nodeId
+    edge.style = {
+      opacity: isConnected ? 1 : 0.1,
+      lineWidth: isConnected ? 3 : 1,
+    }
+  })
+
+  graph.setData({ nodes, edges })
+  graph.render()
+}
+
+// Export graph as PNG
+function exportGraph() {
+  if (!graph) return
+  try {
+    graph.toDataURL('image/png', (dataURL) => {
+      const link = document.createElement('a')
+      link.download = 'student-network.png'
+      link.href = dataURL
+      link.click()
+    })
+  } catch (e) {
+    // Fallback: use canvas directly
+    const canvas = graphEl.value?.querySelector('canvas')
+    if (canvas) {
+      const link = document.createElement('a')
+      link.download = 'student-network.png'
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    }
   }
 }
 
@@ -322,43 +428,31 @@ onBeforeUnmount(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Page Header */
-.page-header {
+/* Header Actions */
+.header-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border);
+  gap: 0.75rem;
 }
 
-.header-content {
-  max-width: 600px;
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition);
 }
 
-.lab-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: var(--primary-50);
-  color: var(--primary-700);
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.75rem;
-}
-
-.page-header h1 {
-  font-size: 1.75rem;
-  margin: 0 0 0.5rem 0;
-  font-weight: 700;
-}
-
-.page-header p {
-  color: var(--muted);
-  margin: 0;
-  line-height: 1.6;
+.btn-export:hover {
+  background: var(--bg-subtle);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .btn-refresh {
@@ -491,6 +585,60 @@ onBeforeUnmount(() => {
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Search Group */
+.search-group {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.search-input {
+  padding: 0.5rem 0.75rem;
+  background: var(--input-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  color: var(--text);
+  width: 160px;
+  transition: all var(--transition);
+}
+
+.search-input::placeholder {
+  color: var(--muted);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.search-btn,
+.clear-btn {
+  padding: 0.5rem 0.625rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.search-btn:hover {
+  background: var(--primary-50);
+  border-color: var(--primary);
+}
+
+.clear-btn {
+  background: var(--danger-50, #fee2e2);
+  border-color: var(--danger, #ef4444);
+  color: var(--danger, #ef4444);
+}
+
+.clear-btn:hover {
+  background: var(--danger, #ef4444);
+  color: white;
 }
 
 /* Add Form Card */

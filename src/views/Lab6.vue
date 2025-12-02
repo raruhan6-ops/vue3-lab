@@ -1,17 +1,23 @@
 <template>
   <section class="lab-page">
     <!-- Page Header -->
-    <header class="page-header">
-      <div class="header-content">
-        <span class="lab-badge">Lab 06</span>
-        <h1>G6 交互可视化</h1>
-        <p>高级图形交互功能：多种布局、节点选择、邻居高亮、缩放控制</p>
-      </div>
-      <button class="btn-refresh" @click="reload" :disabled="loading">
-        <span class="btn-icon">{{ loading ? '⏳' : '🔄' }}</span>
-        {{ loading ? '加载中…' : '刷新数据' }}
-      </button>
-    </header>
+    <LabHeader
+      lab-number="06"
+      title="G6 交互可视化"
+      description="高级图形交互功能：多种布局、节点选择、邻居高亮、缩放控制"
+    >
+      <template #action>
+        <div class="header-actions">
+          <button class="btn-export" @click="exportGraph" title="导出图片">
+            <span>📥</span> 导出
+          </button>
+          <button class="btn-refresh" @click="reload" :disabled="loading">
+            <span class="btn-icon">{{ loading ? '⏳' : '🔄' }}</span>
+            {{ loading ? '加载中…' : '刷新数据' }}
+          </button>
+        </div>
+      </template>
+    </LabHeader>
 
     <!-- Toolbar -->
     <div class="toolbar">
@@ -154,6 +160,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { Graph } from '@antv/g6'
+import LabHeader from '../components/ui/LabHeader.vue'
 
 const graphEl = ref(null)
 let graph = null
@@ -454,6 +461,28 @@ function resetZoom() {
   graph.fitView()
 }
 
+// Export graph as PNG
+function exportGraph() {
+  if (!graph) return
+  try {
+    graph.toDataURL('image/png', (dataURL) => {
+      const link = document.createElement('a')
+      link.download = 'g6-visualization.png'
+      link.href = dataURL
+      link.click()
+    })
+  } catch (e) {
+    // Fallback: use canvas directly
+    const canvas = graphEl.value?.querySelector('canvas')
+    if (canvas) {
+      const link = document.createElement('a')
+      link.download = 'g6-visualization.png'
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    }
+  }
+}
+
 function handleResize() {
   if (!graph || !graphEl.value) return
   graph.setSize(
@@ -505,43 +534,31 @@ onBeforeUnmount(() => {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Page Header */
-.page-header {
+/* Header Actions */
+.header-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border);
+  gap: 0.75rem;
 }
 
-.header-content {
-  max-width: 600px;
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition);
 }
 
-.lab-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: var(--primary-50);
-  color: var(--primary-700);
-  border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.75rem;
-}
-
-.page-header h1 {
-  font-size: 1.75rem;
-  margin: 0 0 0.5rem 0;
-  font-weight: 700;
-}
-
-.page-header p {
-  color: var(--muted);
-  margin: 0;
-  line-height: 1.6;
+.btn-export:hover {
+  background: var(--bg-subtle);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .btn-refresh {

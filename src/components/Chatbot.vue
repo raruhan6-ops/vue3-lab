@@ -19,7 +19,10 @@
               </span>
             </div>
           </div>
-          <button class="close-btn" @click="isOpen = false">✕</button>
+          <div class="header-actions">
+            <button class="header-btn" @click="clearHistory" title="清除历史">🗑️</button>
+            <button class="close-btn" @click="isOpen = false">✕</button>
+          </div>
         </div>
 
         <div class="chat-messages" ref="messagesContainer">
@@ -27,6 +30,19 @@
             <div class="welcome-icon">👋</div>
             <h4>欢迎使用 AI 助手</h4>
             <p>有什么可以帮助你的吗？</p>
+            
+            <!-- Quick Prompts -->
+            <div class="quick-prompts">
+              <button 
+                v-for="prompt in quickPrompts" 
+                :key="prompt.text"
+                class="quick-prompt-btn"
+                @click="sendQuickPrompt(prompt.text)"
+              >
+                <span class="prompt-icon">{{ prompt.icon }}</span>
+                {{ prompt.label }}
+              </button>
+            </div>
           </div>
           
           <div 
@@ -58,6 +74,18 @@
           </div>
         </div>
 
+        <!-- Suggested Actions (when there are messages) -->
+        <div v-if="chatMessages.length > 0 && !isTyping" class="suggested-actions">
+          <button 
+            v-for="action in suggestedActions" 
+            :key="action"
+            class="suggestion-chip"
+            @click="sendQuickPrompt(action)"
+          >
+            {{ action }}
+          </button>
+        </div>
+
         <form class="chat-input" @submit.prevent="sendMessage">
           <input 
             v-model="message" 
@@ -76,16 +104,60 @@
 <script>
 import axios from 'axios';
 
+const STORAGE_KEY = 'chatbot_history';
+
 export default {
   data() {
     return {
       isOpen: false,
       message: '',
       chatMessages: [],
-      isTyping: false
+      isTyping: false,
+      quickPrompts: [
+        { icon: '📊', label: '数据分析', text: '帮我分析学生数据的分布情况' },
+        { icon: '📈', label: '图表建议', text: '推荐适合展示学生成绩的图表类型' },
+        { icon: '🔍', label: '查询帮助', text: '如何筛选特定课程的学生？' },
+        { icon: '💡', label: '功能介绍', text: '这个平台有哪些主要功能？' }
+      ],
+      suggestedActions: [
+        '继续解释',
+        '举个例子',
+        '还有其他方法吗？'
+      ]
     };
   },
+  mounted() {
+    this.loadHistory();
+  },
   methods: {
+    loadHistory() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          // Convert timestamp strings back to Date objects
+          this.chatMessages = parsed.map(msg => ({
+            ...msg,
+            timestamp: new Date(msg.timestamp)
+          }));
+        }
+      } catch (e) {
+        console.error('Failed to load chat history:', e);
+      }
+    },
+    saveHistory() {
+      try {
+        // Only keep last 50 messages
+        const toSave = this.chatMessages.slice(-50);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+      } catch (e) {
+        console.error('Failed to save chat history:', e);
+      }
+    },
+    clearHistory() {
+      this.chatMessages = [];
+      localStorage.removeItem(STORAGE_KEY);
+    },
     formatTime(timestamp) {
       if (!timestamp) return '';
       return new Date(timestamp).toLocaleTimeString('zh-CN', { 
@@ -101,6 +173,10 @@ export default {
         }
       });
     },
+    sendQuickPrompt(text) {
+      this.message = text;
+      this.sendMessage();
+    },
     async sendMessage() {
       if (!this.message.trim()) return;
       
@@ -112,6 +188,7 @@ export default {
       });
       this.message = '';
       this.scrollToBottom();
+      this.saveHistory();
 
       this.isTyping = true;
 
@@ -143,6 +220,7 @@ export default {
       } finally {
         this.isTyping = false;
         this.scrollToBottom();
+        this.saveHistory();
       }
     }
   }
@@ -253,6 +331,30 @@ export default {
   animation: pulse 2s infinite;
 }
 
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.header-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: 0.9rem;
+}
+
+.header-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 .close-btn {
   width: 32px;
   height: 32px;
@@ -302,6 +404,67 @@ export default {
 .welcome-message p {
   margin: 0;
   font-size: 0.9rem;
+}
+
+/* Quick Prompts */
+.quick-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  width: 100%;
+}
+
+.quick-prompt-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+}
+
+.quick-prompt-btn:hover {
+  background: var(--primary-50);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.prompt-icon {
+  font-size: 1rem;
+}
+
+/* Suggested Actions */
+.suggested-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-subtle);
+}
+
+.suggestion-chip {
+  padding: 0.375rem 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.suggestion-chip:hover {
+  background: var(--primary-50);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .message {

@@ -1,110 +1,157 @@
 <template>
-  <section class="lab6">
-    <header class="top">
-      <h2>🧪 Lab 6 — G6 交互可视化</h2>
-      <div class="controls">
-        <!-- 🧭 多种可视化类型 -->
-        <label>
-          视图：
-          <select v-model="viewMode" @change="renderGraph">
-            <option value="relation">关系网络（Force）</option>
-            <option value="courseCluster">按课程聚类（Grid）</option>
-            <option value="semesterRadial">学期分布（Radial）</option>
-          </select>
-        </label>
-
-        <!-- 过滤选项（模仿 Lab5） -->
-        <label>
-          <input type="checkbox" v-model="showSemester" />
-          显示同学期
-        </label>
-        <label>
-          <input type="checkbox" v-model="showCourse" />
-          显示同课程
-        </label>
-        <label>
-          <input type="checkbox" v-model="showActiveOnly" />
-          只看 Active 学生
-        </label>
-
-        <input
-          v-model="searchName"
-          @keyup.enter="focusByName"
-          placeholder="按姓名搜索并高亮"
-        />
-
-        <!-- 缩放按钮 -->
-        <div class="zoom-buttons">
-          <button type="button" @click="zoomIn">➕ 放大</button>
-          <button type="button" @click="zoomOut">➖ 缩小</button>
-          <button type="button" @click="resetZoom">🧭 适应视图</button>
-        </div>
-
-        <button @click="reload" :disabled="loading">
-          {{ loading ? '加载中…' : '🔄 重新加载数据' }}
-        </button>
+  <section class="lab-page">
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-content">
+        <span class="lab-badge">Lab 06</span>
+        <h1>G6 交互可视化</h1>
+        <p>高级图形交互功能：多种布局、节点选择、邻居高亮、缩放控制</p>
       </div>
-
-      <!-- 图例：说明圆圈和连线含义 -->
-      <div class="legend">
-        <span>🟢 圆圈：Active 学生</span>
-        <span>🔴 圆圈：Inactive 学生</span>
-        <span>⭕ 大小：分数越高，节点越大</span>
-        <span>🟦 蓝色线：同学期（Semester）关系</span>
-        <span>🟩 绿色线：同课程（Course）关系</span>
-      </div>
+      <button class="btn-refresh" @click="reload" :disabled="loading">
+        <span class="btn-icon">{{ loading ? '⏳' : '🔄' }}</span>
+        {{ loading ? '加载中…' : '刷新数据' }}
+      </button>
     </header>
 
-    <div class="content">
-      <!-- 左侧：图 -->
-      <div ref="graphEl" class="graph"></div>
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <!-- View Mode -->
+      <div class="control-group">
+        <label class="control-label">视图模式</label>
+        <select v-model="viewMode" @change="renderGraph" class="select-control">
+          <option value="relation">关系网络（Force）</option>
+          <option value="courseCluster">课程聚类（Grid）</option>
+          <option value="semesterRadial">学期分布（Radial）</option>
+        </select>
+      </div>
 
-      <!-- 右侧：详情面板 -->
-      <aside class="panel">
-        <h3>🎯 当前选中学生</h3>
-        <div v-if="selectedStudent">
-          <p><strong>姓名：</strong>{{ selectedStudent.name }}</p>
-          <p><strong>课程：</strong>{{ selectedStudent.course }}</p>
-          <p><strong>学期：</strong>{{ selectedStudent.semester }}</p>
-          <p><strong>分数：</strong>{{ selectedStudent.score }}</p>
-          <p>
-            <strong>状态：</strong>
-            <span
-              :class="[
-                'tag',
-                selectedStudent.status === 'Active' ? 'tag-active' : 'tag-inactive',
-              ]"
-            >
+      <!-- Filters -->
+      <div class="control-group">
+        <label class="control-label">筛选选项</label>
+        <div class="checkbox-group">
+          <label class="filter-checkbox">
+            <input type="checkbox" v-model="showSemester" />
+            同学期
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" v-model="showCourse" />
+            同课程
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" v-model="showActiveOnly" />
+            仅 Active
+          </label>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="control-group">
+        <label class="control-label">搜索学生</label>
+        <div class="search-box">
+          <input
+            v-model="searchName"
+            @keyup.enter="focusByName"
+            placeholder="输入姓名搜索"
+            class="search-input"
+          />
+          <button @click="focusByName" class="search-btn">🔍</button>
+        </div>
+      </div>
+
+      <!-- Zoom Controls -->
+      <div class="control-group">
+        <label class="control-label">视图控制</label>
+        <div class="zoom-controls">
+          <button type="button" @click="zoomIn" class="zoom-btn" title="放大">➕</button>
+          <button type="button" @click="zoomOut" class="zoom-btn" title="缩小">➖</button>
+          <button type="button" @click="resetZoom" class="zoom-btn" title="适应视图">🧭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend-bar">
+      <span class="legend-item"><span class="dot active"></span>Active 学生</span>
+      <span class="legend-item"><span class="dot inactive"></span>Inactive 学生</span>
+      <span class="legend-item"><span class="size-indicator"></span>大小 = 分数</span>
+      <span class="legend-item"><span class="line blue"></span>同学期关系</span>
+      <span class="legend-item"><span class="line green"></span>同课程关系</span>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-grid">
+      <!-- Graph -->
+      <div class="graph-container">
+        <div ref="graphEl" class="graph"></div>
+      </div>
+
+      <!-- Details Panel -->
+      <aside class="detail-panel">
+        <div class="panel-header">
+          <span class="panel-icon">🎯</span>
+          <h3>学生详情</h3>
+        </div>
+
+        <div v-if="selectedStudent" class="student-details">
+          <div class="detail-item">
+            <span class="detail-label">姓名</span>
+            <span class="detail-value">{{ selectedStudent.name }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">课程</span>
+            <span class="detail-value">{{ selectedStudent.course }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">学期</span>
+            <span class="detail-value">{{ selectedStudent.semester }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">分数</span>
+            <span class="detail-value">{{ selectedStudent.score }}</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-label">状态</span>
+            <span :class="['status-badge', selectedStudent.status === 'Active' ? 'active' : 'inactive']">
               {{ selectedStudent.status }}
             </span>
-          </p>
+          </div>
 
-          <div v-if="neighborStudents.length" class="neighbors">
+          <div v-if="neighborStudents.length" class="neighbors-section">
             <h4>🔗 相关学生 ({{ neighborStudents.length }})</h4>
-            <ul>
+            <ul class="neighbors-list">
               <li v-for="n in neighborStudents" :key="n.id">
-                {{ n.name }} — {{ n.course }} — {{ n.semester }}
+                <span class="neighbor-name">{{ n.name }}</span>
+                <span class="neighbor-info">{{ n.course }}</span>
               </li>
             </ul>
           </div>
         </div>
-        <p v-else class="hint">
-          提示：点击左侧图中的节点查看学生详情，并高亮相关节点。
-        </p>
 
-        <div class="stats" v-if="stats.totalNodes > 0">
-          <p>👥 学生数：<strong>{{ stats.totalNodes }}</strong></p>
-          <p>🔗 关系数：<strong>{{ stats.totalEdges }}</strong></p>
+        <div v-else class="panel-placeholder">
+          <span class="placeholder-icon">👆</span>
+          <p>点击图中节点查看学生详情</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="panel-stats" v-if="stats.totalNodes > 0">
+          <div class="panel-stat">
+            <span class="stat-value">{{ stats.totalNodes }}</span>
+            <span class="stat-label">学生数</span>
+          </div>
+          <div class="panel-stat">
+            <span class="stat-value">{{ stats.totalEdges }}</span>
+            <span class="stat-label">关系数</span>
+          </div>
         </div>
       </aside>
     </div>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="error" class="error-message">{{ error }}</p>
   </section>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import { Graph } from '@antv/g6'
 
@@ -173,26 +220,17 @@ function buildGraphData() {
 
   const nodes = list.map((s) => ({
     id: String(s.id),
-    label: s.name,
-    style: {
-      fill: nodeColor(s.status),
-      stroke: '#ffffff',
-      lineWidth: 1.5,
+    data: {
+      name: s.name,
+      course: s.course,
+      semester: s.semester,
+      status: s.status,
+      score: s.score ?? 70,
     },
-    labelCfg: {
-      style: {
-        fill: '#ffffff',
-        fontSize: 11,
-        fontWeight: 600,
-      },
-      position: 'center',
-    },
-    size: Math.max(30, Math.min(56, 24 + (s.score ?? 70) / 3)),
-    semester: s.semester,
-    course: s.course,
   }))
 
   const edges = []
+  let edgeIdx = 0
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) {
       const a = list[i]
@@ -201,41 +239,38 @@ function buildGraphData() {
       const sameCourse = a.course === b.course
 
       if (viewMode.value === 'relation') {
-        // 同学期 + 同课程，受过滤开关控制
         if (sameSemester && showSemester.value) {
           edges.push({
+            id: `edge-${edgeIdx++}`,
             source: String(a.id),
             target: String(b.id),
-            relation: '同学期',
-            style: { stroke: '#3b82f6' }, // 蓝色
+            data: { relation: '同学期' },
           })
         }
         if (sameCourse && showCourse.value) {
           edges.push({
+            id: `edge-${edgeIdx++}`,
             source: String(a.id),
             target: String(b.id),
-            relation: '同课程',
-            style: { stroke: '#22c55e' }, // 绿色
+            data: { relation: '同课程' },
           })
         }
       } else if (viewMode.value === 'courseCluster') {
-        // 只看同课程
         if (sameCourse && showCourse.value) {
           edges.push({
+            id: `edge-${edgeIdx++}`,
             source: String(a.id),
             target: String(b.id),
-            relation: '同课程',
-            style: { stroke: '#22c55e' },
+            data: { relation: '同课程' },
           })
         }
       } else if (viewMode.value === 'semesterRadial') {
-        // 只看同学期
         if (sameSemester && showSemester.value) {
           edges.push({
+            id: `edge-${edgeIdx++}`,
             source: String(a.id),
             target: String(b.id),
-            relation: '同学期',
-            style: { stroke: '#3b82f6' },
+            data: { relation: '同学期' },
           })
         }
       }
@@ -251,52 +286,74 @@ function buildGraphData() {
 // 根据 viewMode 返回不同的布局配置（G6 v5）
 function getLayoutConfig() {
   if (viewMode.value === 'relation') {
-    return { type: 'force', preventOverlap: true }
+    return { type: 'd3-force', preventOverlap: true, nodeSize: 60, nodeSpacing: 80 }
   }
   if (viewMode.value === 'courseCluster') {
-    return { type: 'grid', preventOverlap: true }
+    return { type: 'grid', preventOverlap: true, nodeSize: 60, sortBy: 'data.course' }
   }
   if (viewMode.value === 'semesterRadial') {
-    return { type: 'radial', preventOverlap: true }
+    return { type: 'radial', preventOverlap: true, unitRadius: 120, nodeSize: 60 }
   }
-  return { type: 'force', preventOverlap: true }
+  return { type: 'd3-force', preventOverlap: true, nodeSize: 60 }
 }
+
+// Track dark mode
+const isDark = ref(document.documentElement.classList.contains('dark'))
 
 function initGraph() {
   const container = graphEl.value
   if (!container) return
 
   if (graph) {
-    try {
-      graph.destroy()
-    } catch (e) {}
+    try { graph.destroy() } catch (e) {}
     graph = null
   }
+
+  const textColor = isDark.value ? '#e5e7eb' : '#374151'
+  const bgColor = isDark.value ? '#1f2937' : '#ffffff'
 
   graph = new Graph({
     container,
     width: container.clientWidth,
-    height: Math.max(420, container.clientHeight || 420),
+    height: Math.max(600, container.clientHeight || 600),
+    autoFit: 'view',
+    padding: 60,
     layout: getLayoutConfig(),
-    modes: {
-      default: ['drag-node', 'zoom-canvas', 'drag-canvas'],
-    },
-    defaultNode: {
+    node: {
       type: 'circle',
-    },
-    defaultEdge: {
-      type: 'line',
       style: {
-        stroke: '#94a3b8',
-        lineWidth: 1,
+        size: 30,
+        fill: (d) => d.data?.status === 'Active' ? '#22c55e' : '#ef4444',
+        stroke: '#fff',
+        lineWidth: 2,
+        cursor: 'pointer',
+        shadowColor: 'rgba(0,0,0,0.15)',
+        shadowBlur: 6,
+        labelText: (d) => d.data?.name || '',
+        labelFill: textColor,
+        labelFontSize: 12,
+        labelFontWeight: 500,
+        labelPlacement: 'bottom',
+        labelOffsetY: 6,
       },
     },
+    edge: {
+      type: 'line',
+      style: {
+        stroke: (d) => d.data?.relation === '同学期' ? '#3b82f6' : '#22c55e',
+        lineWidth: 1,
+        opacity: 0.4,
+      },
+    },
+    behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
   })
 
+  // Node click handler for G6 v5
   graph.on('node:click', (evt) => {
-    const model = evt.item?.getModel()
-    if (!model?.id) return
-    handleSelect(String(model.id))
+    const nodeId = evt.target?.id
+    if (nodeId) {
+      handleSelect(String(nodeId))
+    }
   })
 
   window.addEventListener('resize', handleResize)
@@ -306,18 +363,19 @@ function renderGraph() {
   const container = graphEl.value
   if (!container) return
 
-  if (!graph) {
-    initGraph()
+  // Always recreate graph on render to apply theme changes
+  if (graph) {
+    try { graph.destroy() } catch (e) {}
+    graph = null
   }
+  
+  initGraph()
   if (!graph) return
 
   const data = buildGraphData()
 
-  // ✅ G6 v5 API
   graph.setData(data)
-  graph.setLayout(getLayoutConfig())
   graph.render()
-  graph.fitView()
 
   if (selectedId.value) {
     highlightSelection(selectedId.value)
@@ -333,38 +391,35 @@ function handleSelect(id) {
 
 function highlightSelection(id) {
   if (!graph) return
-  const { edges } = lastGraphData.value
-
+  
+  const { nodes, edges } = lastGraphData.value
   const neighborSet = new Set()
+  
   edges.forEach((e) => {
     if (e.source === id) neighborSet.add(e.target)
     if (e.target === id) neighborSet.add(e.source)
   })
 
-  graph.getNodes().forEach((node) => {
-    const model = node.getModel()
-    const isMain = model.id === id
-    const isNeighbor = neighborSet.has(model.id)
-    graph.updateItem(node, {
-      style: {
-        opacity: isMain || isNeighbor ? 1 : 0.2,
-      },
-    })
+  // G6 v5: Update node and edge states
+  nodes.forEach((node) => {
+    const isMain = node.id === id
+    const isNeighbor = neighborSet.has(node.id)
+    const opacity = isMain || isNeighbor ? 1 : 0.25
+    try {
+      graph.updateNodeData([{ id: node.id, style: { opacity } }])
+    } catch (e) {}
   })
 
-  graph.getEdges().forEach((edge) => {
-    const m = edge.getModel()
-    const involved =
-      m.source === id ||
-      m.target === id ||
-      (neighborSet.has(m.source) && neighborSet.has(m.target))
-    graph.updateItem(edge, {
-      style: {
-        opacity: involved ? 0.9 : 0.15,
-        lineWidth: involved ? 2 : 1,
-      },
-    })
+  edges.forEach((edge) => {
+    const involved = edge.source === id || edge.target === id
+    const opacity = involved ? 1 : 0.15
+    const lineWidth = involved ? 3 : 1
+    try {
+      graph.updateEdgeData([{ id: edge.id, style: { opacity, lineWidth } }])
+    } catch (e) {}
   })
+
+  graph.draw()
 }
 
 function focusByName() {
@@ -384,12 +439,14 @@ function focusByName() {
 // 缩放控制（G6 v5）
 function zoomIn() {
   if (!graph) return
-  graph.zoom(1.2) // 放大 20%
+  const currentZoom = graph.getZoom() || 1
+  graph.zoomTo(currentZoom * 1.2)
 }
 
 function zoomOut() {
   if (!graph) return
-  graph.zoom(0.8) // 缩小 20%
+  const currentZoom = graph.getZoom() || 1
+  graph.zoomTo(currentZoom * 0.8)
 }
 
 function resetZoom() {
@@ -399,17 +456,35 @@ function resetZoom() {
 
 function handleResize() {
   if (!graph || !graphEl.value) return
-  graph.changeSize(
+  graph.setSize(
     graphEl.value.clientWidth,
-    Math.max(420, graphEl.value.clientHeight || 420),
+    Math.max(600, graphEl.value.clientHeight || 600),
   )
 }
 
+// Watch for theme changes
+const themeObserver = new MutationObserver(() => {
+  const nowDark = document.documentElement.classList.contains('dark')
+  if (nowDark !== isDark.value) {
+    isDark.value = nowDark
+    renderGraph()
+  }
+})
+
+// Watch filter changes
+watch([showSemester, showCourse, showActiveOnly, viewMode], () => {
+  if (students.value.length > 0) {
+    renderGraph()
+  }
+})
+
 onMounted(() => {
+  themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
   reload()
 })
 
 onBeforeUnmount(() => {
+  try { themeObserver.disconnect() } catch {}
   window.removeEventListener('resize', handleResize)
   if (graph) {
     try {
@@ -421,145 +496,468 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.lab6 {
-  background: var(--color-card, #fff);
-  color: var(--color-text, #1f2937);
-  border-radius: 16px;
-  box-shadow: var(--shadow, 0 8px 24px rgba(0, 0, 0, 0.08));
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+.lab-page {
+  animation: fadeIn 0.5s ease-out;
 }
 
-.top {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.controls {
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-content {
+  max-width: 600px;
+}
+
+.lab-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--primary-50);
+  color: var(--primary-700);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.page-header h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.page-header p {
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-600) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.btn-refresh:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Toolbar */
+.toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 1.5rem;
+  align-items: flex-end;
+  padding: 1rem 1.25rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.control-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.select-control {
+  padding: 0.5rem 0.75rem;
+  background: var(--input-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.select-control:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.checkbox-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.filter-checkbox {
+  display: inline-flex;
   align-items: center;
+  gap: 0.375rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text);
 }
 
-.controls select,
-.controls input {
-  padding: 0.35rem 0.6rem;
-  border-radius: 6px;
-  border: 1px solid #d1d5db;
-  font-size: 0.9rem;
+.filter-checkbox input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--primary);
+  cursor: pointer;
 }
 
-.zoom-buttons {
+.search-box {
   display: flex;
   gap: 0.25rem;
 }
 
-.controls button {
-  background: linear-gradient(90deg, #42b883, #2ecc71);
-  color: #fff;
-  border: 0;
-  border-radius: 10px;
-  padding: 0.35rem 0.7rem;
+.search-input {
+  padding: 0.5rem 0.75rem;
+  background: var(--input-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  color: var(--text);
+  width: 150px;
+  transition: all var(--transition);
+}
+
+.search-input::placeholder {
+  color: var(--muted);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.search-btn {
+  padding: 0.5rem 0.625rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.search-btn:hover {
+  background: var(--primary-50);
+  border-color: var(--primary);
+}
+
+.zoom-controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.zoom-btn {
+  padding: 0.5rem 0.625rem;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   font-size: 0.85rem;
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease, opacity 0.1s ease;
+  transition: all var(--transition);
 }
 
-.controls button:disabled {
-  opacity: 0.6;
-  cursor: default;
+.zoom-btn:hover {
+  background: var(--primary-50);
+  border-color: var(--primary);
 }
 
-.controls button:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
-}
-
-/* 图例区域 */
-.legend {
+/* Legend Bar */
+.legend-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #4b5563;
-}
-
-.legend span {
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 999px;
-  padding: 0.2rem 0.6rem;
-}
-
-.content {
-  display: grid;
-  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
   gap: 1rem;
-  align-items: stretch;
+  padding: 0.75rem 1rem;
+  background: var(--bg-subtle);
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot.active { background: #22c55e; }
+.dot.inactive { background: #ef4444; }
+
+.size-indicator {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+}
+
+.line {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.line.blue { background: #3b82f6; }
+.line.green { background: #22c55e; }
+
+/* Content Grid */
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.graph-container {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 
 .graph {
   width: 100%;
-  min-height: 480px;
-  background: var(--color-surface, #fff);
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
+  min-height: 600px;
+  background: var(--panel);
 }
 
-.panel {
-  background: var(--color-surface, #f9fafb);
-  border-radius: 12px;
-  padding: 0.9rem;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.05);
+/* Detail Panel */
+.detail-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-icon {
+  font-size: 1.25rem;
+}
+
+.panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.student-details {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  font-size: 0.92rem;
+  gap: 0.75rem;
 }
 
-.tag {
-  display: inline-flex;
+.detail-item {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  padding: 0.1rem 0.5rem;
-  border-radius: 999px;
-  font-size: 0.8rem;
 }
 
-.tag-active {
+.detail-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.detail-value {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge.active {
   background: #dcfce7;
   color: #16a34a;
 }
 
-.tag-inactive {
+.status-badge.inactive {
   background: #fee2e2;
-  color: #b91c1c;
+  color: #dc2626;
 }
 
-.neighbors {
-  margin-top: 0.5rem;
+.neighbors-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 
-.neighbors ul {
-  padding-left: 1rem;
+.neighbors-section h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
 }
 
-.stats {
-  margin-top: 0.5rem;
-  font-weight: 600;
+.neighbors-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 200px;
+  overflow-y: auto;
 }
 
-.hint {
-  color: #6b7280;
+.neighbors-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
 }
 
-.error {
-  margin-top: 0.5rem;
-  color: #ef4444;
-  font-weight: 600;
+.neighbors-list li:last-child {
+  border-bottom: none;
+}
+
+.neighbor-name {
+  font-weight: 500;
+}
+
+.neighbor-info {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.panel-placeholder {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--muted);
+}
+
+.placeholder-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.panel-placeholder p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.panel-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.panel-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.panel-stat .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.panel-stat .stat-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--danger-50, #fef2f2);
+  border: 1px solid var(--danger, #ef4444);
+  border-radius: var(--radius);
+  color: var(--danger, #ef4444);
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .page-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .btn-refresh {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .detail-panel {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .checkbox-group {
+    flex-wrap: wrap;
+  }
+  
+  .search-input {
+    width: 100%;
+    flex: 1;
+  }
 }
 </style>

@@ -1,57 +1,112 @@
 <template>
-  <section class="lab5">
-    <header class="top">
-      <h2>🕸️ 学生关系可视化（Lab 5）</h2>
-      <div class="controls">
-        <button @click="reload" :disabled="loading">
-          {{ loading ? '加载中...' : '🔄 重新生成' }}
-        </button>
+  <section class="lab-page">
+    <!-- Page Header -->
+    <header class="page-header">
+      <div class="header-content">
+        <span class="lab-badge">Lab 05</span>
+        <h1>学生关系网络</h1>
+        <p>使用 G6 图可视化库构建学生关系网络，探索同学期和同课程的关联</p>
       </div>
+      <button class="btn-refresh" @click="reload" :disabled="loading">
+        <span class="btn-icon">{{ loading ? '⏳' : '🔄' }}</span>
+        {{ loading ? '加载中...' : '刷新数据' }}
+      </button>
     </header>
 
-    <!-- 🧭 Legend -->
-    <div class="legend">
-      <span>🟢 Active</span>
-      <span>🔴 Inactive</span>
-      <span style="color:#3b82f6;">🔵 同学期 (Same Semester)</span>
-      <span style="color:#22c55e;">🟩 同课程 (Same Course)</span>
-    </div>
-
-    <!-- 🎛️ Filters -->
-    <div class="filters">
-      <label><input type="checkbox" v-model="showSemester" /> 显示同学期</label>
-      <label><input type="checkbox" v-model="showCourse" /> 显示同课程</label>
-      <label><input type="checkbox" v-model="showActiveOnly" /> 仅显示Active学生</label>
-    </div>
-
-    <!-- 🧩 Add Student Form -->
-    <form class="add-form" @submit.prevent="addStudent">
-      <h3>➕ 添加学生</h3>
-      <div class="form-row">
-        <input v-model="newStudent.name" placeholder="姓名" required />
-        <input v-model="newStudent.course" placeholder="课程" required />
-        <input v-model="newStudent.semester" placeholder="学期 (e.g. Spring 2025)" required />
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <!-- Legend -->
+      <div class="legend-group">
+        <span class="legend-title">图例</span>
+        <div class="legend-items">
+          <span class="legend-item"><span class="dot active"></span>Active</span>
+          <span class="legend-item"><span class="dot inactive"></span>Inactive</span>
+          <span class="legend-item"><span class="line semester"></span>同学期</span>
+          <span class="legend-item"><span class="line course"></span>同课程</span>
+        </div>
       </div>
-      <div class="form-row">
-        <input v-model.number="newStudent.score" type="number" placeholder="分数 (0-100)" min="0" max="100" required />
-        <select v-model="newStudent.status">
-          <option value="Active">Active</option>
-          <option value="Inactive">Inactive</option>
-        </select>
-        <button type="submit" :disabled="adding">{{ adding ? '提交中...' : '添加' }}</button>
-      </div>
-    </form>
 
-    <!-- 📊 Stats -->
-    <div class="stats" v-if="stats.totalNodes > 0">
-      <p>👥 学生节点数: <strong>{{ stats.totalNodes }}</strong></p>
-      <p>🔗 关系数: <strong>{{ stats.totalEdges }}</strong></p>
+      <!-- Filters -->
+      <div class="filter-group">
+        <span class="filter-title">筛选</span>
+        <div class="filter-items">
+          <label class="filter-checkbox">
+            <input type="checkbox" v-model="showSemester" />
+            <span class="checkmark"></span>
+            同学期
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" v-model="showCourse" />
+            <span class="checkmark"></span>
+            同课程
+          </label>
+          <label class="filter-checkbox">
+            <input type="checkbox" v-model="showActiveOnly" />
+            <span class="checkmark"></span>
+            仅 Active
+          </label>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-group" v-if="stats.totalNodes > 0">
+        <div class="stat-item">
+          <span class="stat-value">{{ stats.totalNodes }}</span>
+          <span class="stat-label">节点</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ stats.totalEdges }}</span>
+          <span class="stat-label">关系</span>
+        </div>
+      </div>
     </div>
 
-    <!-- 🧠 Visualization -->
-    <div ref="graphEl" class="graph"></div>
+    <!-- Add Student Form -->
+    <div class="add-form-card">
+      <div class="form-header">
+        <span class="form-icon">➕</span>
+        <h3>添加学生</h3>
+      </div>
+      <form @submit.prevent="addStudent">
+        <div class="form-grid">
+          <div class="form-field">
+            <label>姓名</label>
+            <input v-model="newStudent.name" placeholder="输入姓名" required />
+          </div>
+          <div class="form-field">
+            <label>课程</label>
+            <input v-model="newStudent.course" placeholder="输入课程" required />
+          </div>
+          <div class="form-field">
+            <label>学期</label>
+            <input v-model="newStudent.semester" placeholder="e.g. Spring 2025" required />
+          </div>
+          <div class="form-field">
+            <label>分数</label>
+            <input v-model.number="newStudent.score" type="number" placeholder="0-100" min="0" max="100" required />
+          </div>
+          <div class="form-field">
+            <label>状态</label>
+            <select v-model="newStudent.status">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          <div class="form-field form-action">
+            <button type="submit" class="btn-submit" :disabled="adding">
+              {{ adding ? '提交中...' : '添加学生' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <!-- Graph Container -->
+    <div class="graph-container">
+      <div ref="graphEl" class="graph"></div>
+    </div>
+
+    <p v-if="error" class="error-message">{{ error }}</p>
   </section>
 </template>
 
@@ -92,23 +147,13 @@ function buildGraphData(students) {
 
   const nodes = students.map((s) => ({
     id: String(s.id),
-    label: `${s.name}\n${s.course}`,
-    semester: s.semester,
-    style: {
-      fill: nodeColor(s.status),
-      stroke: '#fff',
-      lineWidth: 1.4
-    },
-    labelCfg: {
-      style: {
-        fill: '#fff',
-        fontSize: 12,
-        fontWeight: 600,
-        textAlign: 'center'
-      },
-      position: 'center'
-    },
-    size: Math.max(32, Math.min(56, 24 + (s.score ?? 70) / 3))
+    data: {
+      name: s.name,
+      course: s.course,
+      semester: s.semester,
+      status: s.status,
+      score: s.score ?? 70
+    }
   }))
 
   const edges = []
@@ -118,18 +163,18 @@ function buildGraphData(students) {
         b = students[j]
       if (showSemester.value && a.semester === b.semester) {
         edges.push({
+          id: `edge-sem-${a.id}-${b.id}`,
           source: String(a.id),
           target: String(b.id),
-          relation: '同学期',
-          label: '同学期'
+          data: { relation: '同学期' }
         })
       }
       if (showCourse.value && a.course === b.course) {
         edges.push({
+          id: `edge-crs-${a.id}-${b.id}`,
           source: String(a.id),
           target: String(b.id),
-          relation: '同课程',
-          label: '同课程'
+          data: { relation: '同课程' }
         })
       }
     }
@@ -183,53 +228,52 @@ async function renderGraph(students) {
   const container = graphEl.value
   if (!container) return
 
+  const textColor = isDark.value ? '#e5e7eb' : '#374151'
+  const bgColor = isDark.value ? '#1f2937' : '#ffffff'
+
   try {
     graph = new Graph({
       container,
       width: container.clientWidth || 800,
-      height: 520,
+      height: 650,
       autoFit: 'view',
+      padding: 60,
       layout: {
         type: 'circular',
-        preventOverlap: true,
-        nodeSize: 50
+        radius: Math.min(container.clientWidth, 650) / 3,
       },
       node: {
         type: 'circle',
         style: {
+          size: 32,
+          fill: (d) => d.data?.status === 'Active' ? '#22c55e' : '#ef4444',
+          stroke: '#fff',
+          lineWidth: 2,
           cursor: 'pointer',
           shadowColor: 'rgba(0,0,0,0.15)',
-          shadowBlur: 8
-        }
+          shadowBlur: 6,
+          labelText: (d) => d.data?.name || '',
+          labelFill: textColor,
+          labelFontSize: 12,
+          labelFontWeight: 600,
+          labelPlacement: 'bottom',
+          labelOffsetY: 6,
+        },
       },
       edge: {
         type: 'line',
-        label: {
-          text: (d) => d.label,
-          position: 'center',
-          style: {
-            fill: isDark.value ? '#fff' : '#222',
-            fontSize: 12,
-            fontWeight: 600,
-            background: {
-              fill: isDark.value ? '#0b1220' : '#ffffff',
-              padding: [3, 5],
-              radius: 5
-            }
-          }
+        style: {
+          stroke: (d) => d.data?.relation === '同学期' ? '#3b82f6' : '#22c55e',
+          lineWidth: 1.5,
+          opacity: 0.5,
+          endArrow: false,
         },
-        style: (d) => ({
-          stroke: d.relation === '同学期' ? '#3b82f6' : '#22c55e',
-          lineWidth: d.relation === '同学期' ? 2.5 : 2,
-          opacity: 0.9
-        })
       },
-      background: isDark.value ? '#0b1220' : '#ffffff'
+      behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
     })
 
     await graph.setData({ nodes, edges })
     await graph.render()
-    await graph.fitView()
 
     stats.value = { totalNodes: nodes.length, totalEdges: edges.length }
   } catch (err) {
@@ -253,7 +297,7 @@ onMounted(() => {
   reload()
   const onResize = () => {
     if (!graph || !graphEl.value) return
-    graph.changeSize?.(graphEl.value.clientWidth, 520)
+    graph.setSize?.(graphEl.value.clientWidth, 650)
   }
   window.addEventListener('resize', onResize)
   onBeforeUnmount(() => window.removeEventListener('resize', onResize))
@@ -269,100 +313,325 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.lab5 {
-  background: var(--color-card, #fff);
-  color: var(--color-text, #1f2937);
-  border-radius: 16px;
-  box-shadow: var(--shadow, 0 8px 24px rgba(0,0,0,.08));
-  padding: 1.25rem;
+.lab-page {
+  animation: fadeIn 0.5s ease-out;
 }
-.top {
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.header-content {
+  max-width: 600px;
+}
+
+.lab-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: var(--primary-50);
+  color: var(--primary-700);
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.page-header h1 {
+  font-size: 1.75rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 700;
+}
+
+.page-header p {
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.btn-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-600) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.btn-refresh:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.btn-refresh:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+}
+
+.legend-group,
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.legend-title,
+.filter-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.legend-items,
+.filter-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.dot.active { background: #22c55e; }
+.dot.inactive { background: #ef4444; }
+
+.line {
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.line.semester { background: #3b82f6; }
+.line.course { background: #22c55e; }
+
+/* Filter Checkboxes */
+.filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+  color: var(--text);
+}
+
+.filter-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* Stats */
+.stats-group {
+  display: flex;
+  gap: 1.25rem;
+  margin-left: auto;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Add Form Card */
+.add-form-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: .75rem;
-  margin-bottom: .75rem;
-}
-.controls button {
-  background: linear-gradient(90deg, #42b883, #2ecc71);
-  color: #fff;
-  border: 0;
-  border-radius: 10px;
-  padding: .55rem 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: transform .2s ease, box-shadow .2s ease;
-  box-shadow: 0 6px 14px rgba(66, 184, 131, .25);
-}
-.controls button:hover { transform: translateY(-2px); }
-
-.legend, .filters, .add-form {
-  background: var(--color-surface, #fff);
-  border-radius: 10px;
-  padding: 0.6rem 1rem;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
-  margin-bottom: 0.8rem;
-}
-.dark .legend, .dark .filters, .dark .add-form {
-  background: #1e293b;
-  color: #f1f5f9;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
 }
 
-.filters {
-  display: flex;
-  flex-wrap: wrap;
+.form-icon {
+  font-size: 1.25rem;
+}
+
+.form-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
-  font-weight: 600;
 }
 
-.add-form h3 {
-  margin: 0 0 .5rem 0;
-}
-.form-row {
+.form-field {
   display: flex;
-  flex-wrap: wrap;
-  gap: .6rem;
-  margin-bottom: .5rem;
+  flex-direction: column;
+  gap: 0.375rem;
 }
-.form-row input, .form-row select {
-  padding: .4rem .6rem;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 0.95rem;
+
+.form-field label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
-.form-row button {
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
-  color: #fff;
+
+.form-field input,
+.form-field select {
+  padding: 0.625rem 0.875rem;
+  background: var(--input-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  color: var(--text);
+  transition: all var(--transition);
+}
+
+.form-field input::placeholder {
+  color: var(--muted);
+}
+
+.form-field input:focus,
+.form-field select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.form-action {
+  justify-content: flex-end;
+}
+
+.btn-submit {
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
   border: none;
-  border-radius: 8px;
-  padding: .45rem 1rem;
+  border-radius: var(--radius);
   font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
-}
-.form-row button:hover {
-  opacity: .9;
+  transition: all var(--transition);
+  margin-top: auto;
 }
 
-.stats {
-  display: flex;
-  justify-content: flex-start;
-  gap: 2rem;
-  margin: 0.8rem 0 1rem;
-  font-weight: 600;
-  border-radius: 10px;
-  padding: 0.6rem 1rem;
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
-.graph {
-  width: 100%;
-  min-height: 520px;
-  background: var(--color-surface, #fff);
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.04);
+
+.btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Graph Container */
+.graph-container {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
 }
-.error {
-  color: #ef4444;
-  margin-top: .75rem;
-  font-weight: 600;
+
+.graph {
+  width: 100%;
+  min-height: 650px;
+  background: var(--panel);
+}
+
+.error-message {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--danger-50, #fef2f2);
+  border: 1px solid var(--danger, #ef4444);
+  border-radius: var(--radius);
+  color: var(--danger, #ef4444);
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .btn-refresh {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .stats-group {
+    margin-left: 0;
+    justify-content: center;
+  }
 }
 </style>

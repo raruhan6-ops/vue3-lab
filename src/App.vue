@@ -1,79 +1,93 @@
 <template>
-  <div id="app" :class="isDark ? 'dark-theme' : 'bright-theme'">
+  <div id="app" :class="{ 'dark-theme': isDark }">
     <!-- ✨ Animated Background -->
     <div class="animated-bg"></div>
+    <div class="bg-pattern"></div>
 
     <!-- 🌟 Header -->
     <header class="app-header">
-      <div class="app-title">
-        <!-- Clickable Logo -->
-        <RouterLink to="/" class="logo-link">
-          <img src="/logo.svg" alt="RAR Logo" class="logo" />
-        </RouterLink>
-        <h1>🎓 学生信息可视化平台</h1>
+      <div class="header-content">
+        <div class="app-title">
+          <RouterLink to="/" class="logo-link">
+            <div class="logo-container">
+              <img src="/logo.svg" alt="RAR Logo" class="logo" />
+              <div class="logo-glow"></div>
+            </div>
+          </RouterLink>
+          <div class="title-text">
+            <h1>学生信息可视化平台</h1>
+            <span class="subtitle">Vue 3 Interactive Lab</span>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <div class="nav-links">
+            <RouterLink
+              v-for="tab in tabs"
+              :key="tab.path"
+              :to="tab.path"
+              class="nav-link"
+              active-class="active"
+            >
+              <span class="nav-icon">{{ tab.icon }}</span>
+              <span class="nav-label">{{ tab.label }}</span>
+            </RouterLink>
+          </div>
+
+          <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '切换到明亮模式' : '切换到夜间模式'">
+            <span class="toggle-icon">{{ isDark ? '☀️' : '🌙' }}</span>
+            <span class="toggle-text">{{ isDark ? '明亮' : '夜间' }}</span>
+          </button>
+        </nav>
       </div>
-
-      <nav class="nav">
-        <RouterLink
-          v-for="tab in tabs"
-          :key="tab.path"
-          :to="tab.path"
-          active-class="active"
-        >
-          {{ tab.label }}
-        </RouterLink>
-
-        <!-- 🌗 Theme Toggle Button -->
-        <button class="theme-toggle" @click="toggleTheme">
-          {{ isDark ? '☀️ 明亮模式' : '🌙 夜间模式' }}
-        </button>
-      </nav>
     </header>
 
-    <!-- 🧩 Animated Main Content -->
-    <transition name="fade-slide" mode="out-in">
-      <main class="main-content">
-        <RouterView />
-        <!-- Add Chatbot Component Here -->
+    <!-- 🧩 Main Content -->
+    <main class="main-wrapper">
+      <div class="main-content">
+        <transition name="page" mode="out-in">
+          <RouterView />
+        </transition>
         <Chatbot />
-      </main>
-    </transition>
+      </div>
+    </main>
 
     <!-- ⚙️ Footer -->
     <footer class="footer">
-      <p>© 2025 <strong>Rejuan Ahmed Ruhan</strong> | Vue 3 实验平台</p>
+      <div class="footer-content">
+        <p>
+          <span class="footer-brand">© 2025 Rejuan Ahmed Ruhan</span>
+          <span class="footer-divider">|</span>
+          <span class="footer-tech">Built with Vue 3 + Vite</span>
+        </p>
+      </div>
     </footer>
   </div>
 </template>
 
 <script setup>
 import { RouterView, RouterLink } from "vue-router"
-import { ref, onMounted } from "vue"
-import Chatbot from './components/Chatbot.vue' // Importing the Chatbot Component
+import { ref, onMounted, watch } from "vue"
+import Chatbot from './components/Chatbot.vue'
 
-// 🧭 Navigation Tabs
 const tabs = [
-  { path: "/lab1", label: "Lab 1" },
-  { path: "/lab2", label: "Lab 2" },
-  { path: "/lab3", label: "Lab 3" },
-  { path: "/lab4", label: "Lab 4" },
-  { path: "/lab5", label: "Lab 5" }, // ✅ Added Lab 5
-  { path: "/lab6", label: "Lab 6" }, // 🆕 Lab 6
+  { path: "/lab1", label: "Lab 1", icon: "🧪" },
+  { path: "/lab2", label: "Lab 2", icon: "📡" },
+  { path: "/lab3", label: "Lab 3", icon: "📊" },
+  { path: "/lab4", label: "Lab 4", icon: "🧠" },
+  { path: "/lab5", label: "Lab 5", icon: "🕸️" },
+  { path: "/lab6", label: "Lab 6", icon: "🎯" },
 ]
 
-// 🌗 Dark Mode State
 const isDark = ref(false)
 
-// ✅ Load saved theme from localStorage
 onMounted(() => {
   const saved = localStorage.getItem("theme")
-  if (saved === "dark") {
-    isDark.value = true
-    document.documentElement.classList.add("dark")
-  }
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+  isDark.value = saved === "dark" || (!saved && prefersDark)
+  document.documentElement.classList.toggle("dark", isDark.value)
 })
 
-// ✅ Toggle theme
 function toggleTheme() {
   isDark.value = !isDark.value
   document.documentElement.classList.toggle("dark", isDark.value)
@@ -82,190 +96,321 @@ function toggleTheme() {
 </script>
 
 <style scoped>
-/* 🌈 Core Theme Variables (Light) */
-:root {
-  --color-primary: #42b883;
-  --color-secondary: #2ecc71;
-  --color-accent: #00adb5;
-  --color-text: #1a1a1a;
-  --color-bg: #f9fafc;
-  --color-card: #ffffff;
-  --shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-  --radius: 16px;
-}
-
-/* 🌙 Dark Theme Overrides */
-.dark {
-  --color-bg: #121212;
-  --color-card: #1e1e1e;
-  --color-text: #eaeaea;
-  --color-primary: #3ddc84;
-  --color-secondary: #23d18b;
-  --color-accent: #00bcd4;
-  --shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
-}
-
 /* 🌤 Animated Background */
 .animated-bg {
   position: fixed;
   inset: 0;
-  background: linear-gradient(135deg, #d9f6ec, #e0f7fa, #fefefe);
-  background-size: 300% 300%;
-  animation: bgFlow 10s ease infinite;
+  background: linear-gradient(135deg, 
+    var(--bg) 0%, 
+    var(--bg-subtle) 50%, 
+    var(--bg) 100%
+  );
   z-index: -2;
+  transition: background var(--transition-slow);
 }
-.dark .animated-bg {
-  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-}
-@keyframes bgFlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+
+.bg-pattern {
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.4;
+  z-index: -1;
 }
 
 /* 🌟 Header */
 .app-header {
   position: sticky;
   top: 0;
-  z-index: 10;
-  background: linear-gradient(90deg, #42b883, #2ecc71, #00adb5);
+  z-index: 100;
+  background: linear-gradient(135deg, 
+    var(--primary) 0%, 
+    var(--primary-600) 50%,
+    var(--accent) 100%
+  );
   background-size: 200% 200%;
-  animation: headerFlow 8s ease infinite;
-  color: white;
-  text-align: center;
-  padding: 1.2rem 2rem;
-  border-radius: 0 0 var(--radius) var(--radius);
-  box-shadow: var(--shadow);
+  animation: headerGradient 15s ease infinite;
+  padding: 0;
+  box-shadow: var(--shadow-lg);
 }
-@keyframes headerFlow {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 100% 50%; }
+
+@keyframes headerGradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.header-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
 }
 
 .app-title {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
+  gap: 1rem;
 }
+
 .logo-link {
   display: flex;
   align-items: center;
-  transition: transform 0.2s ease, filter 0.3s ease;
+  transition: transform var(--transition);
 }
 .logo-link:hover {
   transform: scale(1.05);
-  filter: brightness(1.2);
-  cursor: pointer;
 }
+
+.logo-container {
+  position: relative;
+  width: 52px;
+  height: 52px;
+}
+
 .logo {
-  width: 48px;
-  height: 48px;
-  filter: drop-shadow(0 2px 6px rgba(255, 255, 255, 0.5));
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.3));
   animation: floatLogo 4s ease-in-out infinite;
 }
+
+.logo-glow {
+  position: absolute;
+  inset: -4px;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
 @keyframes floatLogo {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-4px); }
 }
-.app-title h1 {
-  font-size: 1.7rem;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  background: linear-gradient(90deg, #fff, #fefae0, #f0fdf4);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-  animation: shimmer 4s linear infinite;
+
+.title-text {
+  display: flex;
+  flex-direction: column;
 }
-@keyframes shimmer {
-  0% { background-position: 0%; }
-  100% { background-position: 300%; }
+
+.title-text h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 /* 🔘 Navigation */
 .nav {
-  margin-top: 0.8rem;
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
   gap: 1rem;
 }
-.nav a {
-  background: rgba(255, 255, 255, 0.25);
-  color: #fff;
-  text-decoration: none;
+
+.nav-links {
+  display: flex;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.375rem;
+  border-radius: var(--radius);
+  backdrop-filter: blur(8px);
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
   font-weight: 600;
-  padding: 0.45rem 1rem;
-  border-radius: 10px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
 }
-.nav a:hover {
-  background: #fff;
-  color: var(--color-primary);
-  transform: translateY(-2px);
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
 }
-.nav a.active {
-  background: #fff;
-  color: var(--color-accent);
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+
+.nav-link.active {
+  background: white;
+  color: var(--primary-700);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nav-icon {
+  font-size: 1rem;
 }
 
 /* 🌗 Theme Toggle */
 .theme-toggle {
-  background: rgba(255, 255, 255, 0.25);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 0.45rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all var(--transition-fast);
 }
+
 .theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.4);
-  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.toggle-icon {
+  font-size: 1.1rem;
 }
 
 /* 🧩 Main Content */
+.main-wrapper {
+  min-height: calc(100vh - 200px);
+  padding: 2rem 1.5rem;
+}
+
 .main-content {
-  max-width: 1100px;
-  margin: 2rem auto;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
   padding: 2rem;
-  background: var(--color-card);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  color: var(--color-text);
-  transition: all 0.4s ease;
+  transition: 
+    background-color var(--transition),
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
 /* ⚙️ Footer */
 .footer {
-  text-align: center;
-  color: #555;
-  margin-top: 3rem;
-  padding: 1rem;
-  font-size: 0.95rem;
-  border-top: 1px solid #e0e0e0;
-  transition: color 0.4s ease;
+  margin-top: auto;
+  padding: 1.5rem 2rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-subtle);
+  transition: background-color var(--transition), border-color var(--transition);
 }
-.dark .footer {
-  color: #ccc;
-  border-top-color: #333;
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footer p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.footer-brand {
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.footer-divider {
+  color: var(--border);
+}
+
+.footer-tech {
+  color: var(--muted);
 }
 
 /* 🌬 Page Transition */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.6s ease;
+.page-enter-active,
+.page-leave-active {
+  transition: all var(--transition-slow);
 }
-.fade-slide-enter-from {
+
+.page-enter-from {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(16px);
 }
-.fade-slide-leave-to {
+
+.page-leave-to {
   opacity: 0;
-  transform: translateY(-20px);
+  transform: translateY(-8px);
+}
+
+/* 📱 Responsive */
+@media (max-width: 1024px) {
+  .header-content {
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .nav {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .nav-links {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .nav-label {
+    display: none;
+  }
+  
+  .nav-link {
+    padding: 0.625rem;
+  }
+  
+  .nav-icon {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .title-text h1 {
+    font-size: 1.125rem;
+  }
+  
+  .subtitle {
+    font-size: 0.65rem;
+  }
+  
+  .logo-container {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .main-wrapper {
+    padding: 1rem;
+  }
+  
+  .main-content {
+    padding: 1.25rem;
+    border-radius: var(--radius-lg);
+  }
 }
 </style>

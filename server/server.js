@@ -188,8 +188,46 @@ app.get('/api/stats', async (req, res) => {
 
 // ==================== Chatbot Endpoint ====================
 
+async function getSystemContext() {
+  try {
+    const [students] = await pool.query('SELECT * FROM students')
+    const total = students.length
+    const active = students.filter((s) => s.status === 'Active').length
+    const courses = [...new Set(students.map((s) => s.course))].join(', ')
+    
+    // Calculate average score
+    const avgScore = total > 0 
+      ? (students.reduce((sum, s) => sum + (s.score || 0), 0) / total).toFixed(1) 
+      : 0
+
+    const labInfo = `
+Lab Descriptions:
+- Lab 1 (基础组件): Introduction to Vue 3 components, reactive state, event handling. Components: HelloVue, ClickCounter, TodoApp.
+- Lab 2 (API 数据交互): RESTful API interaction using Axios. Implements CRUD operations for student data.
+- Lab 3 (ECharts 数据可视化): Interactive charts using ECharts library to visualize student data analysis.
+- Lab 4 (G2 高级图表): Advanced data visualization using AntV G2. Professional grade charts.
+- Lab 5 (学生关系网络): Student relationship network visualization using AntV G6. Shows connections by semester and course.
+- Lab 6 (G6 交互可视化): Advanced G6 graph interactions. Features: Force/Grid/Radial layouts, node selection, neighbor highlighting, zoom controls.
+`
+
+    return `
+Current System Data:
+- Total Students: ${total}
+- Active Students: ${active}
+- Average Score: ${avgScore}
+- Courses Offered: ${courses}
+${labInfo}
+- Student Data (ID: Name | Course | Semester | Score | Status):
+${students.map((s) => `  ${s.id}: ${s.name} | ${s.course} | ${s.semester} | ${s.score} | ${s.status}`).join('\n')}
+`.trim()
+  } catch (e) {
+    console.error('Error loading context:', e)
+    return 'Error loading system data.'
+  }
+}
+
 app.post('/api/chatbot', async (req, res) => {
-  const { message } = req.body
+  const { message, history } = req.body
   if (!message) return res.status(400).json({ ok: false, error: 'Message is required' })
 
   if (process.env.MOCK_GROQ === '1') {
@@ -201,46 +239,71 @@ app.post('/api/chatbot', async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: 'Server misconfiguration',
-      detail: 'Set a valid GROQ_API_KEY in server/.env'
+      detail: 'Set a valid GROQ_API_KEY in server/.env',
     })
   }
 
   try {
+    const systemContext = await getSystemContext()
+    
+    const messages = [
+      { 
+        role: 'system', 
+        content: `You are an intelligent data analyst assistant for a student management system. 
+You have access to the current database state below. 
+Use this data to answer user questions accurately. 
+If asked about data you don't have, say so.
+Keep answers concise and helpful.
+
+${systemContext}` 
+      }
+    ]
+
+    // Append history if provided (limit to last 10 turns to save tokens)
+    if (Array.isArray(history)) {
+      messages.push(...history.slice(-10))
+    }
+
+    // Append current user message
+    messages.push({ role: 'user', content: message })
+
     const resp = await axios.post(
       'https://api.groq.com/openai/v1/chat/completions',
       {
         model: 'qwen/qwen3-32b',
-        messages: [
-          { role: 'system', content: 'You are a helpful assistant.' },
-          { role: 'user', content: message }
-        ],
-        temperature: 0.6,
+        messages: messages,
+        temperature: 0.5,
         max_completion_tokens: 1024,
-        top_p: 0.95,
-        stream: false
+        top_p: 0.9,
+        stream: false,
       },
       {
         headers: {
           Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        timeout: 60000
+        timeout: 60000,
       }
     )
 
     const data = resp.data
-    const text = data?.choices?.[0]?.message?.content ?? JSON.stringify(data)
+    let text = data?.choices?.[0]?.message?.content ?? JSON.stringify(data)
+    
+    // Remove <think>...</think> blocks from the response
+    text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
+    
     res.json({ ok: true, response: text, raw: data })
   } catch (err) {
     if (err.code === 'ENOTFOUND') {
       return res.status(502).json({
         ok: false,
         error: 'DNS resolution failed',
-        detail: 'Could not resolve api.groq.com. Check network/DNS settings.'
+        detail: 'Could not resolve api.groq.com. Check network/DNS settings.',
       })
     }
     const status = err?.response?.status || 500
-    const detail = err?.response?.data?.error?.message || err?.response?.data || err.message
+    const detail =
+      err?.response?.data?.error?.message || err?.response?.data || err.message
     console.error('Groq API error:', detail)
     res.status(status).json({ ok: false, error: 'Groq API error', detail })
   }

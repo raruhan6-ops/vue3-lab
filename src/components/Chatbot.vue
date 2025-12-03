@@ -193,7 +193,16 @@ export default {
       this.isTyping = true;
 
       try {
-        const response = await axios.post('http://localhost:3000/api/chatbot', { message: userMessage });
+        // Prepare history for context (last 10 messages)
+        const history = this.chatMessages.slice(-10).map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        }));
+
+        const response = await axios.post('http://localhost:3000/api/chatbot', { 
+          message: userMessage,
+          history: history
+        });
         const payload = response.data || {};
 
         const text =

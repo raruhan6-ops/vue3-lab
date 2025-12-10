@@ -77,6 +77,7 @@ const tabs = [
   { path: "/lab4", label: "Lab 4", icon: "🧠" },
   { path: "/lab5", label: "Lab 5", icon: "🕸️" },
   { path: "/lab6", label: "Lab 6", icon: "🎯" },
+  { path: "/lab7", label: "Lab 7", icon: "🗺️" },
 ]
 
 const isDark = ref(false)

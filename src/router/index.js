@@ -80,6 +80,16 @@ export const routes = [
       bg: 'linear-gradient(135deg,#fbc2eb 0%,#a6c1ee 100%)', // soft pink → blue
     },
   },
+  // 🆕 Lab 7 route
+  {
+    path: '/lab7',
+    name: 'Lab7',
+    component: () => import('../views/Lab7.vue'),
+    meta: {
+      title: 'Lab 7 - L7 × 高德地图',
+      bg: 'linear-gradient(135deg,#cfe9ff 0%,#b6d4ff 100%)',
+    },
+  },
   {
     path: '/:catchAll(.*)',
     redirect: '/', // redirect invalid URLs to homepage

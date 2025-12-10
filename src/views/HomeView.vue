@@ -23,6 +23,10 @@
             <span>🧪</span>
             开始实验
           </RouterLink>
+          <RouterLink to="/lab7" class="btn btn-primary">
+            <span>🗺️</span>
+            直达中国地图
+          </RouterLink>
           <a href="https://vuejs.org/" target="_blank" rel="noopener" class="btn btn-outline">
             <span>📚</span>
             了解 Vue 3
@@ -153,6 +157,7 @@ const features = [
 ]
 
 const labs = [
+  { path: "/lab7", icon: "🗺️", number: "07", title: "中国地图", desc: "L7 + 高德地图" },
   { path: "/lab1", icon: "🧪", number: "01", title: "基础组件", desc: "Vue 组件基础" },
   { path: "/lab2", icon: "📡", number: "02", title: "API 交互", desc: "Axios 数据请求" },
   { path: "/lab3", icon: "📊", number: "03", title: "ECharts", desc: "基础图表可视化" },

@@ -1,0 +1,80 @@
+LAB-7 STEP OUTLINE (Gaode/Amap + China Map with AntV L7)
+
+1) PREREQUISITES
+- Have an existing Vue 3 project (Labs 1–6 structure).
+- Node.js + npm installed.
+- VS Code with Copilot enabled.
+
+2) INSTALL DEPENDENCIES
+- Run: npm i @antv/l7 @antv/l7-maps
+- (Keep other map deps if already present; we will use Gaode/Amap here.)
+
+3) DATA PREP
+- Obtain a China provinces GeoJSON (properties should include province name, e.g., "name" or "province").
+- Save the file to: public/data/china-provinces.json
+
+4) (IF REQUIRED) AMAP KEY / SECURITY
+- If your environment requires AMap credentials:
+  - Inject AMap Key in your HTML or build config per your setup.
+  - Optionally set: window._AMapSecurityConfig = { securityJsCode: "YOUR_AMAP_SECURITY_JS_CODE" } before creating the Scene.
+
+5) CREATE VIEW FILE
+- Create: src/views/Lab7.vue
+- Purpose: render Gaode base map + PolygonLayer for provinces + (optional) PointLayer for cities/POIs.
+- Use L7 Scene + GaodeMap from @antv/l7-maps.
+
+6) BASE MAP CONFIG
+- Initialize Scene with GaodeMap({ style: "light", center: [105, 36], zoom: 3.5, pitch: 0 }).
+- Allowed styles: "light" | "dark" | "normal" or custom 'amap://styles/<id>'.
+- Ensure the container element: <div id="lab7-map"></div> with height (e.g., 70vh).
+
+7) LOAD CHINA GEOJSON
+- Fetch /data/china-provinces.json in onMounted scene 'loaded' callback.
+- Create PolygonLayer:
+  - .source(chinaGeoJSON)
+  - .shape("fill")
+  - .color("name", colorMappingFn or categorical palette)
+  - .style({ opacity: 0.85, stroke: "#444", strokeWidth: 0.6 })
+  - .active(true) and .select(true) for hover/selection.
+
+8) OPTIONAL BORDERS
+- Add LineLayer using the same source for province borders:
+  - .shape("line").size(0.8).color("#333")
+
+9) OPTIONAL POINTS (POI)
+- Create PointLayer with sample cities or your dataset:
+  - .source(geojsonPoints, { parser: { type: "geojson" } })
+  - .shape("circle").size(8–12).color("#1f77b4")
+  - .style({ stroke: "#111", strokeWidth: 1 })
+  - .setTooltip({ items: [{ field: "name", alias: "城市" }] })
+
+10) INTERACTION
+- Tooltip on provinces (optional): chinaLayer.setTooltip({ items: [{ field: "name", alias: "省份" }] })
+- Click focus: on layer 'click', compute centroid of polygon and scene.setZoomAndCenter(5–6, [lng, lat]).
+- Fit to China initial view using a rough bounding box (center ~ [105,36], zoom ~ 3.5).
+
+11) UI CONTROLS (OPTIONAL)
+- Add a checkbox to toggle POI layer visibility.
+- Add a select to switch color scheme (categorical palettes).
+
+12) ROUTER WIRING
+- In src/router/index.ts, add route:
+  - { path: "/lab7", name: "Lab7", component: () => import("@/views/Lab7.vue") }
+- Add navigation entry in your menu/home page similar to Labs 1–6.
+
+13) RUN AND TEST
+- Start dev server: npm run dev
+- Confirm: base map renders; provinces display with fill + border; hover/selection works; POI toggles; tooltip shows names.
+- Verify performance on zoom/pan.
+
+14) EXTENSIONS (FOR BONUS)
+- Choropleth by metric (e.g., population): color by metric with legend (quantize/quantile).
+- Heatmap for dense points: add HeatmapLayer; toggle via UI.
+- Export: scene.exportPng() bound to a button.
+- Province drill-down: on click, load city-level GeoJSON and swap layers.
+
+15) DELIVERABLES CHECKLIST
+- Lab7.vue committed and routed.
+- GeoJSON file present under public/data/china-provinces.json.
+- Screenshots for report: default view, hovered province, clicked/zoomed-in province, optional POI/heatmap.
+- Short notes on design choices: base style, color scheme, interaction, and any metrics used.

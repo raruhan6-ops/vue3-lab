@@ -11,6 +11,9 @@
   "dependencies": {
     "@antv/g2": "^5.4.2",
     "@antv/g6": "^5.0.50",
+    "@antv/l7": "^2.23.1",
+    "@antv/l7-core": "2.0.14",
+    "@antv/l7-maps": "^2.23.1",
     "@heroicons/vue": "^2.2.0",
     "aos": "^2.3.4",
     "axios": "^1.13.2",

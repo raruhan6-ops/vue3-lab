@@ -11,7 +11,7 @@ A comprehensive Vue 3 educational platform designed to demonstrate modern web de
 ## 🚀 Features
 
 ### 📚 Interactive Labs
-The platform consists of 6 progressive labs, each focusing on specific technical domains:
+The platform consists of 7 progressive labs, each focusing on specific technical domains:
 
 - **Lab 01: Basic Components**
   - Introduction to Vue 3 Composition API.
@@ -101,6 +101,13 @@ Ensure your MySQL server is running. Create a database and configure the connect
    npm run setup-db
    ```
 
+### Optional: Map dependencies for Lab 7
+If you plan to run Lab 7 (China map with AntV L7 + Gaode/Amap), install the L7 packages in the frontend:
+```bash
+npm install @antv/l7 @antv/l7-maps
+```
+You may also need an AMap (Gaode) key depending on your environment — follow the LAB7 instructions in `LAB7_steps_outline.txt`.
+
 ### 3. Backend Setup
 Start the Express server:
 ```bash
@@ -137,7 +144,7 @@ vue3-lab/
 │   ├── composables/     # Shared logic (Vue Composables)
 │   ├── router/          # Vue Router configuration
 │   ├── styles/          # Global CSS and themes
-│   ├── views/           # Page views (Home, Labs 1-6)
+│   ├── views/           # Page views (Home, Labs 1-7)
 │   ├── App.vue          # Root component
 │   └── main.js          # Application entry point
 ├── package.json         # Frontend dependencies

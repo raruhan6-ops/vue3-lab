@@ -1,0 +1,98 @@
+GITHUB COPILOT INSTRUCTIONS — LAB 7 (L7 + Gaode + China map)
+
+GOAL
+- Add a working Lab 7 page using AntV L7 with GaodeMap and render China provinces from GeoJSON.
+- Ensure header shows "Lab 7" tab.
+- Ensure /public/data/china-provinces.json is loaded and displayed.
+
+CHECKLIST (acceptance criteria)
+- Header/nav displays a "Lab 7" tab that routes to /lab7.
+- Visiting /lab7 shows a Gaode base map with filled China provinces, borders, and hover/selection.
+- Fetch(/data/china-provinces.json) succeeds (no 404 in Network tab).
+- Optional: toggle a POI point layer; clicking a province zooms in.
+
+---
+TASK 1 — INSTALL DEPENDENCIES (if not already installed)
+Terminal:
+npm i @antv/l7 @antv/l7-maps
+
+---
+TASK 2 — PREPARE DATA FILE
+- Create folder: public/data
+- Place China provinces GeoJSON at: public/data/china-provinces.json
+- (If you have a file named china.json, rename or copy to china-provinces.json)
+
+Verify in browser when dev server runs:
+http://localhost:5173/data/china-provinces.json  -> must return JSON
+
+---
+TASK 3 — ADD ROUTE FOR LAB 7
+File: src/router/index.js
+- Add a route pointing to src/views/Lab7.vue
+- Use lazy import
+- Meta: title 'Lab 7 - L7 × 高德地图'
+
+Copilot prompt:
+"Add a new route object for /lab7 in src/router/index.js using lazy-loaded component '../views/Lab7.vue' with name 'Lab7' and meta.title 'Lab 7 - L7 × 高德地图'."
+
+Example structure:
+{
+  path: '/lab7',
+  name: 'Lab7',
+  component: () => import('../views/Lab7.vue'),
+  meta: { title: 'Lab 7 - L7 × 高德地图' },
+}
+
+---
+TASK 4 — SHOW LAB 7 IN HEADER TABS
+File: src/App.vue
+- Locate the tabs array.
+- Append: { path: "/lab7", label: "Lab 7", icon: "🗺️" }
+
+Copilot prompt:
+"In src/App.vue, update the tabs array and append a new entry for Lab 7 at '/lab7' with label 'Lab 7' and icon '🗺️'."
+
+---
+TASK 5 — CREATE VIEW: src/views/Lab7.vue
+Goal: L7 Scene + GaodeMap; PolygonLayer for provinces; optional PointLayer; hover/selection; click-to-zoom.
+
+Copilot prompt:
+"Generate a Vue 3 <script setup lang='ts'> component named Lab7.vue that mounts an AntV L7 Scene with GaodeMap({ style: 'light', center: [105,36], zoom: 3.5 }).
+- Fetch('/data/china-provinces.json') on scene 'loaded' event.
+- Create PolygonLayer:
+  .source(geojson)
+  .shape('fill')
+  .color('name', categorical palette function)
+  .style({ opacity: 0.85, stroke: '#444', strokeWidth: 0.6 })
+  .active(true) and .select(true).
+- Add LineLayer borders using same source: .shape('line').size(0.8).color('#333').
+- Optional PointLayer with few cities and setTooltip({ items: [{ field: 'name', alias: '城市' }]}).
+- On province layer 'click', compute centroid and scene.setZoomAndCenter(5.2, [lng, lat]).
+- Provide a <div id='lab7-map' class='map'> container and CSS: .map { height: 70vh }.
+- Export default nothing; use <script setup> style."
+
+Note (optional AMap security):
+// (window as any)._AMapSecurityConfig = { securityJsCode: 'YOUR_CODE' };
+Set before creating Scene if required by your environment.
+
+---
+TASK 6 — RUN AND VERIFY
+Terminal:
+npm run dev
+
+In browser:
+- Click "Lab 7" in header.
+- Confirm provinces render; hover highlights; clicking zooms in.
+- If blank, open DevTools → Network:
+  - 404 on /data/china-provinces.json -> wrong path or filename; fix by placing the file under public/data/.
+- If AMap errors, set securityJsCode or key per your setup.
+
+---
+OPTIONAL ENHANCEMENTS
+- Tooltip on provinces: chinaLayer.setTooltip({ items: [{ field: 'name', alias: '省份' }] });
+- Legend: color legend based on categorical palette.
+- Add a checkbox to toggle POI layer visibility.
+- Export image: scene.exportPng() bound to a button.
+- Drill down: on click, load city-level GeoJSON and replace layer.
+
+END OF INSTRUCTIONS

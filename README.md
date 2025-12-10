@@ -11,7 +11,14 @@ A comprehensive Vue 3 educational platform designed to demonstrate modern web de
 ## 🚀 Features
 
 ### 📚 Interactive Labs
+
 The platform consists of 7 progressive labs, each focusing on specific technical domains:
+  
+- **Lab 07: GeoJSON & Gaode Map Visualization**
+  - Overlay and visualize multiple GeoJSON files on a blank or Gaode (Amap) map using **AntV L7**.
+  - Multi-select UI for overlays, smooth rendering for large files, and performance optimizations.
+  - Consistent header and dark mode support, matching all other labs.
+  - Modern UI with CSS variables for light/dark themes.
 
 - **Lab 01: Basic Components**
   - Introduction to Vue 3 Composition API.
@@ -48,9 +55,10 @@ The platform consists of 7 progressive labs, each focusing on specific technical
 - **Conversation Memory**: Remembers context for natural follow-up questions.
 
 ### 🎨 UI/UX
+
 - **Responsive Design**: Fully responsive layout for all devices.
-- **Dark/Light Mode**: System-aware theme toggling with persistent preference.
-- **Modern Styling**: Built with CSS variables and scoped styles for modularity.
+- **Dark/Light Mode**: System-aware theme toggling with persistent preference. All labs, including Lab7, use CSS variables for seamless dark mode.
+- **Modern Styling**: Built with CSS variables and scoped styles for modularity. Lab7 now uses the same header and style conventions as other labs.
 
 ## 🛠️ Tech Stack
 
@@ -102,7 +110,7 @@ Ensure your MySQL server is running. Create a database and configure the connect
    ```
 
 ### Optional: Map dependencies for Lab 7
-If you plan to run Lab 7 (China map with AntV L7 + Gaode/Amap), install the L7 packages in the frontend:
+If you plan to run Lab 7 (GeoJSON overlays with AntV L7 + Gaode/Amap), install the L7 packages in the frontend:
 ```bash
 npm install @antv/l7 @antv/l7-maps
 ```
@@ -124,6 +132,10 @@ npm install
 npm run dev
 ```
 The application will be available at `http://localhost:5173`.
+
+#### Lab 7 Notes
+- Lab7 features multi-GeoJSON overlay, Gaode map, and performance optimizations for large files.
+- UI and header are consistent with other labs, and dark mode is fully supported.
 
 ## 📂 Project Structure
 

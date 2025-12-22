@@ -1,0 +1,227 @@
+LAB 8 — L7符号可视化（Symbol Visualization）—— GitHub Copilot 指令文件
+===============================================================================
+
+0) 你是谁 / 你要做什么
+- 你是 GitHub Copilot（或 Copilot Chat），请按本文件要求，为一个 Vue 3 + Vite 项目实现“实验 8：L7符号可视化”页面，并生成实验报告内容框架。
+- 项目已有多个实验页面（Lab1~Lab7）。本实验重点：用 AntV L7 在地图上做“符号可视化”，包括：
+  1) 点位符号（图标 / 几何形状）
+  2) 文字标签（Text symbol）
+  3) 用颜色/大小/形状把数据映射为视觉变量
+  4) 交互（悬停提示、点击详情、筛选）
+
+-------------------------------------------------------------------------------
+
+1) 实验目标（必须达到）
+A. 地图可正常显示（推荐使用 GaodeMap 底图）。
+B. 在地图上渲染至少 30 个点位，并满足：
+   - 图标/形状符号层：PointLayer 使用 shape 显示“circle/simple/图片图标”等符号。
+   - 文字标签层：PointLayer 使用 shape(field, 'text') 显示名称文字。
+C. 至少实现 3 种数据映射（任选其三，但要清晰可见）：
+   - size 映射：根据 value / score 映射到点大小范围（例如 [6, 24]）
+   - color 映射：根据 category 映射颜色（分类映射）
+   - shape 映射：根据 category 映射不同图标（如 addImage 后的 '00','01'…）
+D. 交互至少包含：
+   - hover 高亮（active）
+   - tooltip / popup 显示点位详细信息（推荐 LayerPopup 或自定义 popup）
+   - 筛选：勾选类别后，只显示选中的类别点位（可在前端过滤数据后重新 source）
+E. 代码结构清晰，组件卸载时正确销毁 scene，避免内存泄漏。
+
+-------------------------------------------------------------------------------
+
+2) 技术选型与关键 API（请严格按这些写法）
+2.1 L7 的 Scene + GaodeMap
+- 使用 @antv/l7 与 @antv/l7-maps。
+- GaodeMap 配置使用 token（等同于高德 key）。token 不要硬编码在仓库里，改用 Vite 环境变量。
+
+示例（伪代码，仅供结构参考）：
+- import { Scene, PointLayer, LayerPopup } from '@antv/l7'
+- import { GaodeMap } from '@antv/l7-maps'
+- const scene = new Scene({
+    id: 'mapContainerId',
+    map: new GaodeMap({
+      style: 'light',
+      center: [113.65, 34.76],  // 郑州附近
+      zoom: 10,
+      pitch: 0,
+      token: import.meta.env.VITE_AMAP_TOKEN,
+    }),
+  })
+
+2.2 PointLayer 的 shape（符号/文字/图标）
+- 形状符号：layer.shape('simple') 或 layer.shape('circle')（简单点建议 simple 性能更好）
+- 文字：layer.shape('name', 'text')
+- 图片图标：scene.addImage('iconA', 'xxx.svg/url'); 然后 layer.shape('iconField', ['iconA','iconB',...]) 或 layer.shape('iconA')
+
+-------------------------------------------------------------------------------
+
+3) 项目改动清单（Copilot 必须一次性完成）
+3.1 新增文件（建议）
+A) public/data/lab8_poi.json
+- 至少 30 条记录（越多越好）
+- 字段建议：
+  - id: number
+  - name: string（用于文字标签）
+  - lng: number
+  - lat: number
+  - category: string（如 'food' 'dorm' 'teaching' 'sports'…）
+  - value: number（用于 size 映射，比如热度/评分/人数）
+
+数据样例（你需要补到 30+ 条）：
+[
+  {"id":1,"name":"图书馆","lng":113.542,"lat":34.823,"category":"study","value":80},
+  {"id":2,"name":"体育馆","lng":113.544,"lat":34.821,"category":"sports","value":60}
+]
+
+B) src/views/Lab8.vue
+- 实现完整 UI：左侧控制面板 + 右侧地图
+- 地图容器高度要固定（比如 70vh 或 calc(100vh - header)）
+- 支持：加载数据、渲染图标层 + 文字层、hover/click、筛选
+
+3.2 修改现有文件
+A) src/router/index.js
+- 新增路由：
+  path: '/lab8'
+  name: 'lab8'
+  component: () => import('../views/Lab8.vue')
+  meta.title = 'Lab 8 - L7符号可视化'
+
+B) src/App.vue（或你的导航组件）
+- 在顶部导航加一个 Lab8 入口（与 Lab1~Lab7 同风格）
+
+-------------------------------------------------------------------------------
+
+4) Lab8.vue 详细功能规格（照着做）
+4.1 布局
+- 页面标题：实验 8：L7符号可视化
+- 左侧控制区（建议包含）：
+  - 类别筛选：checkbox 列表（从数据中自动提取 category 去重）
+  - 显示开关：勾选显示/隐藏“图标层”“文字层”
+  - 映射开关：勾选启用/禁用 size 映射（禁用时使用固定大小）
+  - 当前选中点位详情卡片（点击点后显示 name/category/value/lng/lat）
+
+4.2 地图与图层
+A) Scene 初始化
+- onMounted 创建 scene
+- scene.on('loaded' 或 'load') 后再 addLayer
+- onBeforeUnmount: scene.destroy()
+
+B) 图标符号层（PointLayer）
+- data source：lab8_poi.json（json parser：x='lng', y='lat'）
+- shape：两种任选其一（建议两种都做，让实验更丰满）：
+  1) 简单形状：shape('simple') 或 shape('circle')
+  2) 图标：scene.addImage 后，shape('category', ['iconA','iconB',...])
+- size：
+  - 默认：.size(12)
+  - 开启映射：.size('value', [6, 24])
+- color：
+  - .color('category', ['#...','#...','#...']) 或者 .color('value', ['#...','#...'])
+- style（至少设置）：
+  opacity, stroke, strokeWidth, blur 等（任选合理项）
+
+C) 文字标签层（PointLayer）
+- 使用同一份数据
+- 必须写法：.shape('name', 'text')
+- 建议：
+  - .size(12) 作为字体大小（或在 style 里配置）
+  - .color('#000') 或根据 category 配色
+  - style 里设置：
+    textOffset: [0, 16]（让文字在点下方/上方）
+    textAnchor: 'top' / 'center'
+    padding, stroke, strokeWidth（让文字更清晰）
+
+4.3 交互
+A) hover 高亮
+- iconLayer.active(true)（并可配置 activeColor）
+- 鼠标移动时显示 tooltip（推荐 LayerPopup）
+  - tooltip 内容：name / category / value
+
+B) click 选中
+- iconLayer.on('click', e => { selected = e.feature })
+- 右侧/左侧详情卡片显示选中点信息
+
+C) 筛选
+- 勾选类别后：
+  - filteredData = allData.filter(d => selectedCategories.has(d.category))
+  - iconLayer.source(filteredData, parser)
+  - textLayer.source(filteredData, parser)
+- 同步更新地图：保留当前视角，不要每次重建 scene
+
+-------------------------------------------------------------------------------
+
+5) 高德 token 与安全要求（必须遵守）
+- token 放到 .env.local（不提交仓库）
+  VITE_AMAP_TOKEN=你的高德key
+- 仓库里只放 .env.example（写占位符）
+- 不允许把真实 token / 密钥 / 密码提交到 GitHub
+
+-------------------------------------------------------------------------------
+
+6) 实验报告写作指令（用于填《实验八报告模版》）
+报告结构固定为：
+一、实验目的及要求
+二、实验方法
+三、实验内容
+四、实验结果及分析
+
+你要生成的报告要点（每段写 6~12 行中文即可）：
+
+一、实验目的及要求（写这些点）
+- 熟悉 L7 的 Scene、PointLayer 基本用法
+- 掌握符号可视化思想：shape/size/color 等视觉变量映射
+- 掌握文本标注（shape(field,'text')）与图标符号（addImage + shape 映射）
+- 实现基本交互：hover/click/popup/筛选
+- 注意性能与资源释放（destroy）
+
+二、实验方法（写这些点）
+- 技术栈：Vue3 + Vite + AntV L7 + @antv/l7-maps
+- 数据格式：JSON 点数据（lng/lat） + 分类字段 + 数值字段
+- 映射策略：
+  - category → color / icon
+  - value → size
+  - name → text label
+- 交互实现：L7 layer 事件 + LayerPopup 或自定义 tooltip
+- 安全：token 放在 .env.local，仓库提供 .env.example
+
+三、实验内容（写这些点）
+- 页面结构与路由：新增 Lab8 页面、配置路由与导航
+- 地图初始化：GaodeMap 参数（center/zoom/style/token）
+- 图层实现：
+  - 图标层：PointLayer + shape + size/color 映射 + active
+  - 文字层：PointLayer + shape('name','text') + textOffset 等样式
+- 控制面板：类别筛选、显示开关、映射开关、点击详情
+
+四、实验结果及分析（写这些点）
+- 展示截图清单（至少 3 张）：
+  1) 默认全量点位 + 图标层 + 文字层
+  2) hover 显示 tooltip / popup
+  3) 勾选筛选后只显示部分类别
+- 分析：
+  - 映射后的可读性提升（大小表示强度，颜色/图标表示类别）
+  - 文字标注解决了“点位含义不清”的问题
+  - 讨论性能：simple vs circle、点位数量增大时建议聚合/抽稀
+  - 总结：完成实验目标，掌握 L7 符号可视化流程
+
+-------------------------------------------------------------------------------
+
+7) Copilot 生成代码的硬性要求（避免返工）
+- 使用 <script setup> + Composition API
+- 必须处理异步加载数据（fetch('/data/lab8_poi.json')）
+- 必须在 onBeforeUnmount destroy scene
+- 不要把 token 写死在代码里
+- 避免在 watch 中频繁重建 scene（只更新图层数据 source 即可）
+- 写必要注释（中文即可）
+
+-------------------------------------------------------------------------------
+
+8) 验收清单（你写完后自查）
+[ ] /lab8 页面可打开，地图正常显示
+[ ] 至少 30 个点位渲染成功
+[ ] 图标层 + 文字层都能开关显示
+[ ] size/color/shape 至少 3 个映射生效
+[ ] hover 有高亮 + tooltip/popup
+[ ] click 能选中并显示详情
+[ ] 类别筛选生效
+[ ] 卸载页面无报错，内存不持续增长（scene.destroy）
+[ ] .env.example 存在，真实 token 不在仓库
+
+END.

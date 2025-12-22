@@ -12,13 +12,8 @@ A comprehensive Vue 3 educational platform designed to demonstrate modern web de
 
 ### 📚 Interactive Labs
 
-The platform consists of 7 progressive labs, each focusing on specific technical domains:
-  
-- **Lab 07: GeoJSON & Gaode Map Visualization**
-  - Overlay and visualize multiple GeoJSON files on a blank or Gaode (Amap) map using **AntV L7**.
-  - Multi-select UI for overlays, smooth rendering for large files, and performance optimizations.
-  - Consistent header and dark mode support, matching all other labs.
-  - Modern UI with CSS variables for light/dark themes.
+  The platform consists of 7 progressive labs, each focusing on specific technical domains:
+
 
 - **Lab 01: Basic Components**
   - Introduction to Vue 3 Composition API.
@@ -47,6 +42,15 @@ The platform consists of 7 progressive labs, each focusing on specific technical
   - Advanced graph interactions with **AntV G6**.
   - Multiple layouts: Force-directed, Grid, and Radial.
   - Features: Node highlighting, zoom controls, and detailed inspection panels.
+
+  - **Lab 07: GeoJSON & Gaode Map Visualization**
+    - Overlay and visualize multiple GeoJSON files on a blank or Gaode (Amap) map using **AntV L7**.
+    - Multi-select UI for overlays, smooth rendering for large files, and performance optimizations.
+    - Consistent header and dark mode support, matching all other labs.
+    - Modern UI with CSS variables for light/dark themes.
+    - Loading spinner for large overlays and improved user experience.
+    - Instructions for handling large geojson files and git LFS included in the repo.
+    - See `LAB7_steps_outline.txt` for setup and troubleshooting.
 
 ### 🤖 AI Assistant
 - Integrated **AI Chatbot** powered by **Groq API** (using `qwen/qwen3-32b` model).

@@ -90,6 +90,16 @@ export const routes = [
       bg: 'linear-gradient(135deg,#cfe9ff 0%,#b6d4ff 100%)',
     },
   },
+  // 🆕 Lab 8 route
+  {
+    path: '/lab8',
+    name: 'Lab8',
+    component: () => import('../views/Lab8.vue'),
+    meta: {
+      title: 'Lab 8 - L7符号可视化',
+      bg: 'linear-gradient(135deg,#f5f7fa 0%,#c3cfe2 100%)',
+    },
+  },
   {
     path: '/:catchAll(.*)',
     redirect: '/', // redirect invalid URLs to homepage

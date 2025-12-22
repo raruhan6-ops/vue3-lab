@@ -1,0 +1,175 @@
+LAB 8（L7符号可视化）— GitHub Copilot 指令 TXT（按此完成并自检）
+==============================================================
+
+你是 GitHub Copilot（或 Copilot Chat）。请在当前 Vue3 + Vite 项目中，把 Lab8 做到“地图上能看到 JSON 点位符号 + 文字标签 + 映射 + 交互 + 筛选”。我已经有：
+- 路由：/lab8 已添加
+- 页面：src/views/Lab8.vue（需要你按下面修复/增强）
+- 数据：35 条点位 JSON（请放到 public/data/lab8_poi.json）
+
+--------------------------------------------------------------
+0) 目标（必须达标）
+✅ 地图能正常加载（高德底图）
+✅ JSON 点位能显示（至少 30 个点）
+✅ 2 个图层：
+   - 图标/点位符号层（PointLayer）
+   - 文字标签层（PointLayer，shape('name','text')）
+✅ 视觉映射至少 3 个：
+   - size: value → [6,24]
+   - color: category → 不同颜色
+   - shape: category → 不同图标（或不同形状）
+✅ 交互：
+   - hover 高亮（active）
+   - hover tooltip/popup（LayerPopup）
+   - click 选中并在左侧显示详情
+✅ 筛选：checkbox 勾选类别，只显示选中类别点位
+✅ 卸载时销毁 scene（避免内存泄露）
+
+--------------------------------------------------------------
+1) 必做：放置数据文件（JSON）
+1.1 新建文件：
+public/data/lab8_poi.json
+
+1.2 把我给你的 35 条记录原样保存进去。
+注意：访问路径必须是：
+fetch('/data/lab8_poi.json')
+
+1.3 parser 必须匹配字段：
+{ parser: { type: 'json', x: 'lng', y: 'lat' } }
+
+--------------------------------------------------------------
+2) 必做：修复/增强 Lab8.vue（按下面要求重写或打补丁）
+文件：src/views/Lab8.vue
+
+2.1 修复常见致命错误（必须避免）
+- 不要写 enableSizeMapping = ref(true) 这种（少了 const，会报错）
+- 不要重复声明同名 ref
+- L7 的 size 映射写法必须是：
+  layer.size('value', [6, 24])
+  或 layer.size(12)
+
+2.2 地图初始化（必须）
+- 使用 Scene + GaodeMap：
+  token: import.meta.env.VITE_AMAP_TOKEN
+- 注意：某些版本事件是 'loaded'，某些是 'load'。
+  如果 loaded 不触发，就改成 scene.on('load', ...)
+
+2.3 两个图层（必须）
+A) iconLayer（点位符号层）
+- 使用 PointLayer
+- source 用 filteredData
+- shape 至少做到一种：
+  ✅ 简单点：shape('circle') 或 shape('simple')
+  ✅ 图标：scene.addImage('study', '/icons/study.png') 然后 shape('category', categoriesArray)
+- size：
+  - 开启映射：size('value',[6,24])
+  - 关闭映射：size(12)
+- color：
+  - 推荐回调写法（不怕顺序错）：
+    .color('category', c => categoryColors[c] || '#5B8FF9')
+- active(true) 开启 hover 高亮
+
+B) textLayer（文字标签层）
+- 使用 PointLayer
+- source 用 filteredData
+- 必须写法：shape('name','text')
+- style 建议：
+  textOffset: [0,16]
+  textAnchor: 'top'
+  stroke + strokeWidth（让文字清晰）
+
+2.4 交互（必须）
+- iconLayer.on('click', e => selectedFeature.value = e.feature)
+- tooltip/popup：
+  new LayerPopup({
+    items: [{ layer: iconLayer, fields: [...] }]
+  }).addTo(scene)
+
+2.5 筛选（必须）
+- categories 从 rawData 提取去重
+- selectedCategories 默认全选
+- filteredData = rawData.filter(d => selectedCategories.includes(d.category))
+- checkbox 变化后：不要重建 scene，只更新：
+  iconLayer.source(filteredData, parser)
+  textLayer.source(filteredData, parser)
+
+2.6 自动定位到数据（强烈建议，防止“看不到点”）
+实现一个 fitToData()：
+- 根据 filteredData 计算 minLng/maxLng/minLat/maxLat
+- 调用 scene.fitBounds([[minLng, minLat],[maxLng,maxLat]])（如果 fitBounds 不可用，则用 scene.setCenter + scene.setZoom）
+目标：打开 Lab8 时自动把视角移到点位范围。
+
+2.7 卸载清理（必须）
+onBeforeUnmount:
+- scene.destroy()
+- scene = null
+- layers = null
+
+--------------------------------------------------------------
+3) 必做：解决“地图有，但点/图标不显示”的常见原因（请你逐项处理）
+3.1 首先加调试日志（开发阶段）
+console.log('raw:', rawData.length, rawData[0])
+console.log('filtered:', filteredData.length)
+
+3.2 如果点位仍不显示：先用最简单的圆点验证数据
+把 iconLayer 暂时改成：
+shape('circle').size(16).color('#ff0000')
+如果红点出现 → 数据没问题，问题在图标/CORS/shape 映射。
+
+3.3 图标不显示（最常见是 CORS）
+不要依赖外链 svg。改成本地图片：
+- 新建目录：public/icons/
+- 放 PNG/SVG 图标，比如：
+  public/icons/study.png
+  public/icons/sports.png
+  public/icons/food.png
+  ...
+- addImage 用本地路径：
+  scene.addImage('study', '/icons/study.png')
+- shape 映射用类别名数组（必须与 addImage 名字一致）：
+  iconLayer.shape('category', categories.value)
+
+--------------------------------------------------------------
+4) 环境变量（必须：不要把 token 提交 GitHub）
+4.1 新建 .env.local（本地，不提交）
+VITE_AMAP_TOKEN=你的高德Key
+
+4.2 提供 .env.example（可提交）
+VITE_AMAP_TOKEN=your_amap_key_here
+
+4.3（可选）如果高德要求 securityJsCode
+在 main.js 最顶部（创建 Scene 之前）加：
+window._AMapSecurityConfig = { securityJsCode: import.meta.env.VITE_AMAP_SECURITY_JSCODE }
+并在 .env.local 加：
+VITE_AMAP_SECURITY_JSCODE=你的值
+
+--------------------------------------------------------------
+5) Copilot 输出要求（你写代码时必须遵守）
+- 使用 <script setup> + Composition API
+- 不要频繁重建 Scene（只更新 layer.source/size/color）
+- 写必要中文注释
+- 保持 UI：左侧筛选 + 开关 + 详情卡片；右侧地图
+- 保证地图容器有高度（>= 500px）
+- 代码无 ESLint/编译错误
+
+--------------------------------------------------------------
+6) 验收清单（写完后你必须自己勾选）
+[ ] /lab8 页面地图正常显示
+[ ] 能看到 35 个点位符号（至少 30 个）
+[ ] 图标层可开关显示
+[ ] 文字层可开关显示
+[ ] size 映射开关有效（点大小明显变化）
+[ ] color 映射有效（不同类别不同颜色）
+[ ] shape 映射有效（不同类别不同图标/形状）
+[ ] hover 高亮 + tooltip/popup 显示 name/category/value
+[ ] click 点位后左侧显示详情
+[ ] 勾选类别筛选后，点位数量变化正确
+[ ] 页面离开后无报错、无持续占用（scene.destroy）
+
+--------------------------------------------------------------
+7) 报告（实验八报告模版）要点提醒（快速写法）
+一、实验目的及要求：写 L7 Scene/PointLayer、符号可视化（shape/size/color）、文字标注、交互、筛选、资源释放。
+二、实验方法：Vue3+Vite+L7+高德底图；JSON 数据；映射策略（category→color/shape，value→size，name→text）；LayerPopup；env 安全。
+三、实验内容：路由 + 页面布局；加载 JSON；两个图层；控制面板；事件交互；筛选更新 source；fitBounds 定位。
+四、实验结果及分析：3 张截图（全量、hover、筛选后）；分析可读性与性能（点多可聚合/抽稀）；总结掌握 L7 符号可视化流程。
+
+END.

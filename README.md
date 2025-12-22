@@ -12,7 +12,8 @@ A comprehensive Vue 3 educational platform designed to demonstrate modern web de
 
 ### 📚 Interactive Labs
 
-  The platform consists of 7 progressive labs, each focusing on specific technical domains:
+
+  The platform consists of 8 progressive labs, each focusing on specific technical domains:
 
 
 - **Lab 01: Basic Components**
@@ -43,6 +44,7 @@ A comprehensive Vue 3 educational platform designed to demonstrate modern web de
   - Multiple layouts: Force-directed, Grid, and Radial.
   - Features: Node highlighting, zoom controls, and detailed inspection panels.
 
+
   - **Lab 07: GeoJSON & Gaode Map Visualization**
     - Overlay and visualize multiple GeoJSON files on a blank or Gaode (Amap) map using **AntV L7**.
     - Multi-select UI for overlays, smooth rendering for large files, and performance optimizations.
@@ -52,17 +54,28 @@ A comprehensive Vue 3 educational platform designed to demonstrate modern web de
     - Instructions for handling large geojson files and git LFS included in the repo.
     - See `LAB7_steps_outline.txt` for setup and troubleshooting.
 
+  - **Lab 08: L7 Symbol Visualization**
+    - Symbol visualization of 35+ POI points on a Gaode (Amap) map using **AntV L7**.
+    - Two layers: icon/symbol layer (PointLayer) and text label layer (PointLayer with shape('name','text')).
+    - Visual mappings: size (value→[6,24]), color (category), shape (category→local PNG icons).
+    - Interactive features: hover highlight, tooltip/popup, click-to-select with left-panel details.
+    - Category filtering with checkboxes, toggles for icon/text layers, and size mapping.
+    - Uses local PNG icons in `public/icons/` for category mapping (no CORS issues).
+    - Auto-fit map to visible points; scene and layers are properly destroyed on unmount.
+    - See `Lab8_Copilot_Instructions.txt` for full requirements and troubleshooting.
+
 ### 🤖 AI Assistant
 - Integrated **AI Chatbot** powered by **Groq API** (using `qwen/qwen3-32b` model).
 - **Context-Aware**: The bot has access to the live database state (student counts, averages, etc.).
 - **RAG-Lite**: Retrieves relevant system information to answer user queries accurately.
 - **Conversation Memory**: Remembers context for natural follow-up questions.
 
+
 ### 🎨 UI/UX
 
 - **Responsive Design**: Fully responsive layout for all devices.
-- **Dark/Light Mode**: System-aware theme toggling with persistent preference. All labs, including Lab7, use CSS variables for seamless dark mode.
-- **Modern Styling**: Built with CSS variables and scoped styles for modularity. Lab7 now uses the same header and style conventions as other labs.
+- **Dark/Light Mode**: System-aware theme toggling with persistent preference. All labs, including Lab7 and Lab8, use CSS variables for seamless dark mode.
+- **Modern Styling**: Built with CSS variables and scoped styles for modularity. Lab7 and Lab8 use the same header and style conventions as other labs.
 
 ## 🛠️ Tech Stack
 
@@ -137,9 +150,15 @@ npm run dev
 ```
 The application will be available at `http://localhost:5173`.
 
+
 #### Lab 7 Notes
 - Lab7 features multi-GeoJSON overlay, Gaode map, and performance optimizations for large files.
 - UI and header are consistent with other labs, and dark mode is fully supported.
+
+#### Lab 8 Notes
+- Lab8 demonstrates symbol visualization with local icons, category filtering, and interactive mapping.
+- Uses local PNG icons in `public/icons/` for all categories (study, sports, food, etc.).
+- All mapping, filtering, and interaction requirements are met per the instructions.
 
 ## 📂 Project Structure
 

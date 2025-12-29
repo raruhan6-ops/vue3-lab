@@ -199,7 +199,7 @@ export default {
           content: msg.text
         }));
 
-        const response = await axios.post('http://localhost:3000/api/chatbot', { 
+        const response = await axios.post('/api/chatbot', { 
           message: userMessage,
           history: history
         });

@@ -8,9 +8,13 @@ import './styles/tokens.css'
 import { createPinia } from 'pinia'
 
 // Create the app and register the router
+import Toast from "vue-toastification";
+import "vue-toastification/dist/index.css";
+
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)
+app.use(Toast)
 
 // Mount the app to the #app element in index.html
 app.mount('#app')

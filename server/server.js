@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { pool, testConnection } from './db.js'
+import { studentSchema } from './schemas/student.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -51,21 +52,22 @@ app.get('/api/students/:id', async (req, res) => {
 // POST create new student
 app.post('/api/students', async (req, res) => {
   try {
-    const { name, course, score, semester, status } = req.body
-
-    if (!name || !course || !semester) {
-      return res.status(400).json({ error: 'Name, course, and semester are required' })
-    }
+    // Validate input using Zod
+    const validatedData = studentSchema.parse(req.body)
+    const { name, course, score, semester, status } = validatedData
 
     const [result] = await pool.query(
       'INSERT INTO students (name, course, score, semester, status) VALUES (?, ?, ?, ?, ?)',
-      [name, course, score || 0, semester, status || 'Active']
+      [name, course, score, semester, status]
     )
 
     const [newStudent] = await pool.query('SELECT * FROM students WHERE id = ?', [result.insertId])
     console.log('✅ Student created:', newStudent[0])
     res.status(201).json(newStudent[0])
   } catch (err) {
+    if (err.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation Error', details: err.errors })
+    }
     console.error('Error creating student:', err.message)
     res.status(500).json({ error: 'Database error', detail: err.message })
   }
@@ -82,23 +84,29 @@ app.put('/api/students/:id', async (req, res) => {
       return res.status(404).json({ message: 'Student not found' })
     }
 
-    const updated = {
-      name: name ?? existing[0].name,
-      course: course ?? existing[0].course,
-      score: score ?? existing[0].score,
-      semester: semester ?? existing[0].semester,
-      status: status ?? existing[0].status
+    // Merge existing data with updates to validate full object
+    const merged = {
+      name: req.body.name ?? existing[0].name,
+      course: req.body.course ?? existing[0].course,
+      score: req.body.score ?? existing[0].score,
+      semester: req.body.semester ?? existing[0].semester,
+      status: req.body.status ?? existing[0].status
     }
+
+    const validatedData = studentSchema.parse(merged)
 
     await pool.query(
       'UPDATE students SET name = ?, course = ?, score = ?, semester = ?, status = ? WHERE id = ?',
-      [updated.name, updated.course, updated.score, updated.semester, updated.status, id]
+      [validatedData.name, validatedData.course, validatedData.score, validatedData.semester, validatedData.status, id]
     )
 
     const [updatedStudent] = await pool.query('SELECT * FROM students WHERE id = ?', [id])
     console.log('✅ Student updated:', updatedStudent[0])
     res.json(updatedStudent[0])
   } catch (err) {
+    if (err.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation Error', details: err.errors })
+    }
     console.error('Error updating student:', err.message)
     res.status(500).json({ error: 'Database error', detail: err.message })
   }
@@ -194,10 +202,10 @@ async function getSystemContext() {
     const total = students.length
     const active = students.filter((s) => s.status === 'Active').length
     const courses = [...new Set(students.map((s) => s.course))].join(', ')
-    
+
     // Calculate average score
-    const avgScore = total > 0 
-      ? (students.reduce((sum, s) => sum + (s.score || 0), 0) / total).toFixed(1) 
+    const avgScore = total > 0
+      ? (students.reduce((sum, s) => sum + (s.score || 0), 0) / total).toFixed(1)
       : 0
 
     const labInfo = `
@@ -245,17 +253,17 @@ app.post('/api/chatbot', async (req, res) => {
 
   try {
     const systemContext = await getSystemContext()
-    
+
     const messages = [
-      { 
-        role: 'system', 
+      {
+        role: 'system',
         content: `You are an intelligent data analyst assistant for a student management system. 
 You have access to the current database state below. 
 Use this data to answer user questions accurately. 
 If asked about data you don't have, say so.
 Keep answers concise and helpful.
 
-${systemContext}` 
+${systemContext}`
       }
     ]
 
@@ -288,10 +296,10 @@ ${systemContext}`
 
     const data = resp.data
     let text = data?.choices?.[0]?.message?.content ?? JSON.stringify(data)
-    
+
     // Remove <think>...</think> blocks from the response
     text = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim()
-    
+
     res.json({ ok: true, response: text, raw: data })
   } catch (err) {
     if (err.code === 'ENOTFOUND') {

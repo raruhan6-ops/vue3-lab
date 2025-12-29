@@ -52,7 +52,7 @@
     </div>
 
     <!-- 🧾 Student Table -->
-    <div class="table-container" v-if="students.length">
+    <div class="table-container" v-if="students.length || loading">
       <table class="data-table">
         <thead>
           <tr>
@@ -66,7 +66,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="s in students" :key="s.id" class="table-row">
+          <!-- Skeleton Loading State -->
+          <tr v-if="loading" v-for="i in 5" :key="i" class="table-row">
+            <td v-for="j in 7" :key="j">
+              <SkeletonLoader height="24px" />
+            </td>
+          </tr>
+          
+          <!-- Student Data -->
+          <tr v-else v-for="s in students" :key="s.id" class="table-row">
             <td class="cell-id">
               <span class="id-badge">#{{ s.id }}</span>
             </td>
@@ -99,7 +107,7 @@
       </table>
     </div>
     
-    <div v-else class="empty-state">
+    <div v-else-if="!loading" class="empty-state">
       <div class="empty-icon">📭</div>
       <h3>暂无数据</h3>
       <p>请添加学生信息或调整筛选条件</p>
@@ -156,7 +164,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import http from '../utils/http'
+import SkeletonLoader from './ui/SkeletonLoader.vue'
 
 const students = ref([])
 const filters = ref({ q: '', status: '', semester: '' })
@@ -181,7 +190,7 @@ async function loadData() {
   loading.value = true
   error.value = ''
   try {
-    const res = await axios.get('/api/students')
+    const res = await http.get('/students')
     let data = res.data || []
 
     if (filters.value.q) {
@@ -210,7 +219,7 @@ async function loadData() {
 async function addStudent() {
   loading.value = true
   try {
-    await axios.post('/api/students', form.value)
+    await http.post('/students', form.value)
     form.value = { name: '', course: '', score: '', semester: '', status: 'Active' }
     await loadData()
   } catch (err) {
@@ -223,7 +232,7 @@ async function addStudent() {
 async function deleteStudent(id) {
   if (!confirm('确定删除该学生吗？')) return
   try {
-    await axios.delete(`/api/students/${id}`)
+    await http.delete(`/students/${id}`)
     await loadData()
   } catch (err) {
     error.value = '删除失败：' + err.message
